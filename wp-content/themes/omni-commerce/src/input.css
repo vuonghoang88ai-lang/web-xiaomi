@@ -1,0 +1,148 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.product-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.tab-active {
+  border-bottom: 3px solid #008198;
+  color: #0c1a1d;
+  font-weight: 700;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Đảm bảo các lớp responsive cho Menu luôn được kích hoạt */
+@media (min-width: 768px) {
+  .md\:flex {
+    display: flex !important;
+  }
+}
+
+@media (min-width: 900px) {
+  .lg\:flex {
+    display: flex !important;
+  }
+  .main-nav-header {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+}
+
+/* Single Product Page Custom Styles */
+.zebra-table tr:nth-child(even) {
+  background-color: #f6f3f2;
+}
+
+.sticky-buy-box {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 20px;
+  z-index: 10;
+}
+
+.line-clamp-fade {
+  position: relative;
+  max-height: 500px;
+  overflow: hidden;
+}
+
+.line-clamp-fade::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100px;
+  background: linear-gradient(to bottom, transparent, #ffffff);
+  pointer-events: none;
+}
+
+/* Archive Product Page — moved from inline <style> (A2) */
+.woocommerce-notices-wrapper:empty {
+  display: none !important;
+  margin: 0 !important;
+}
+
+.filter-widgets-container .widget:last-child {
+  margin-bottom: 0 !important;
+}
+
+.mi-order-wrapper * {
+  margin-bottom: 0 !important;
+}
+
+/* Custom Pagination for News Page */
+ul.page-numbers {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+ul.page-numbers li {
+  display: inline-flex;
+}
+
+ul.page-numbers .page-numbers {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  background-color: #f3f4f6;
+  color: #4b5563;
+  font-weight: 500;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+ul.page-numbers .page-numbers:hover {
+  background-color: #e5e7eb;
+  color: #008198;
+}
+
+ul.page-numbers .page-numbers.current {
+  background-color: #008198;
+  color: white;
+  font-weight: 700;
+  box-shadow: 0 4px 6px -1px rgba(0, 129, 152, 0.2);
+}
+
+ul.page-numbers .page-numbers.dots {
+  background-color: transparent;
+  pointer-events: none;
+}
+
+/* Footer Bottom App Bar Padding */
+@media (max-width: 767px) {
+  body { padding-bottom: 70px; }
+}
+
+/* Hide common scroll to top buttons from other plugins/themes */
+#ast-scroll-top, .ast-scroll-top,
+#scrollUp, #scroll-up, .scroll-up,
+#toTop, .scrollToTop, .scroll-to-top,
+.elementor-scroll-to-top,
+.wpscroll-to-top, .scrolltop,
+a.back-to-top, button.back-to-top, div.back-to-top,
+.storefront-handheld-footer-bar ul li.cart .count {
+  display: none !important;
+}

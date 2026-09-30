@@ -1,0 +1,62 @@
+services:
+  db:
+    image: mariadb:10.11
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wp_user
+      MYSQL_PASSWORD: wp_password
+    volumes:
+      - db_data:/var/lib/mysql
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+
+  wordpress:
+    image: wordpress:php8.2-apache
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wp_user
+      WORDPRESS_DB_PASSWORD: wp_password
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_CONFIG_EXTRA: |
+        define( 'WP_REDIS_HOST', 'redis' );
+        define( 'WP_REDIS_PORT', 6379 );
+        $$protocol = (!empty($$_SERVER['HTTP_X_FORWARDED_PROTO']) && $$_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 'https://' : 'http://';
+        if (isset($$_SERVER['HTTP_HOST'])) {
+            define('WP_SITEURL', $$protocol . $$_SERVER['HTTP_HOST']);
+            define('WP_HOME', $$protocol . $$_SERVER['HTTP_HOST']);
+        }
+        if (isset($$_SERVER['HTTP_X_FORWARDED_PROTO']) && $$_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+            $$_SERVER['HTTPS'] = 'on';
+        }
+    volumes:
+      - ./wp-content:/var/www/html/wp-content
+    depends_on:
+      - db
+      - redis
+
+  # --- DỊCH VỤ TRÍ NHỚ CHO AI AGENT ---
+  graph-memory:
+    build:
+      context: ./graph-memory-service
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./.memory:/root/.dsh/graph-memory
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  # --- CLOUDFLARE TUNNEL ---
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token eyJhIjoiZjk5ODdhMmMzZjNiMmRjMjkxYjFiM2IyMjJhYTE3ZjIiLCJ0IjoiN2Y1YzI0YjgtNmRiNC00NDhiLThjYzMtOGY1OGFjZjU5ZDcxIiwicyI6Ik56Z3lPR0pqTW1RdE1UQXdNaTAwT1RRNUxXRmxOR1l0WVdabE9HVm1ZVFkxT0RRell6Z3hOR0k0WldRdFptVTBNeTAwWW1VekxUZzJNMkV0WkdReE5HUXpNVFJrWWpBdyJ9
+
+volumes:
+  db_data:

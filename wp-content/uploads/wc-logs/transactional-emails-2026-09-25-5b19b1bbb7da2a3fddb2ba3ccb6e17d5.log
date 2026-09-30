@@ -1,0 +1,2 @@
+2026-09-25T00:41:19+00:00 WARNING Email "new_order" for order #169 failed to send: Could not instantiate mail function. CONTEXT: {"email_type":"new_order","status":"failed","recipient":"vuonghoangadmin","order":169}
+2026-09-25T00:41:19+00:00 NOTICE Email "customer_processing_order" for order #169 not sent: no_recipient CONTEXT: {"email_type":"customer_processing_order","status":"skipped","recipient":"guest","reason":"no_recipient","order":169}
