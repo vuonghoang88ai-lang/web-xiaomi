@@ -31,6 +31,7 @@ pipeline {
                 sh """
                 ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${TARGET_IP} '
                     mkdir -p /home/ubuntu/backups &&
+                    mkdir -p ${DEPLOY_DIR} &&
                     cd ${DEPLOY_DIR} &&
                     (docker compose exec -T db mysqldump -u wp_user -pwp_password wordpress > /home/ubuntu/backups/db_backup_\$(date +%Y%m%d_%H%M%S).sql || echo "Bỏ qua backup vì Database chưa khởi tạo")
                 '
