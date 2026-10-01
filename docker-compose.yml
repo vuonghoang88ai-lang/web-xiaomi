@@ -43,6 +43,7 @@ services:
 
   # --- DỊCH VỤ TRÍ NHỚ CHO AI AGENT ---
   graph-memory:
+    profiles: ["dev"] # Chỉ chạy khi được gọi đích danh
     build:
       context: ./graph-memory-service
     restart: unless-stopped
