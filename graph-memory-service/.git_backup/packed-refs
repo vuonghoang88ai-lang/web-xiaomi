@@ -1,0 +1,34 @@
+# pack-refs with: peeled fully-peeled sorted 
+78d1ed32492d8caace7e4e3c1a881297dd1bc249 refs/remotes/origin/benchmark/locomo-longmemeval
+efcd407731813ec5bad463a0ba2472a8d7a73ac5 refs/remotes/origin/desktop-2.0
+441823fe1079c7109f7e7d68d940bbd731d2ebec refs/remotes/origin/dev
+83ffb2771022a8d323feefc280ae4f198d8b85e5 refs/remotes/origin/feat/dsh-context-engine
+441018a50236091b757af473c124fda0c584002e refs/remotes/origin/feat/turn-memory-navigation
+a5c73c9225fe07281d9349372f75c37aed336844 refs/remotes/origin/fix/dsh-install-without-build-scripts
+b70896002cac7305b4aaf89922329eed2ffd82ee refs/remotes/origin/fix/issue-74-dsh-package
+30d8ae85f7986c01c8b228787101babac0bb2cba refs/remotes/origin/fix/issues-79-80-prompt-braces
+441018a50236091b757af473c124fda0c584002e refs/remotes/origin/main
+e26fe178eaa19d81abf829b002f266b279b696de refs/tags/v1.0.1
+^10e524c2c474c2a879ea0706305293f34bcb72a4
+d12a473e9753685a7e66be540e3d3c685b36eee7 refs/tags/v1.0.2
+^5f38f85e9ecba89f1421eec95145f73cfd5cbbc9
+d542c15f4321bf8851e2a98ea2b4348dfef507d3 refs/tags/v1.1.0
+2aad05a45a4435cdaa4d30425e5451b5e85e221e refs/tags/v1.1.1
+^114f40f9152e710069853752503597ac0d15f66c
+21d6620883b4960d0e583d85b13ce63a0bbbdf32 refs/tags/v1.1.2
+^22fff42c76266804d48a8fb61d5a2ad1b504b37f
+f1b6125e8f30134300373afaa73014f206bdca1a refs/tags/v1.1.3
+^4e3edec702f8615d370f284e36f00edbdaa24d68
+b9a4463aa47991403d359491a0ba5fd38ef9fbd4 refs/tags/v1.2.0
+^4f89a120da0879fca95c2104b6959f12ba68d818
+5623fd31580aa73c6108da982ce9da0f069c96c7 refs/tags/v1.2.1
+^44d768f4a831be552fb19345129c81863e9028f5
+dd37a13506daaa77c903bdb99e98668c6923ab07 refs/tags/v1.5.0
+^27e7a34c9fb9ed230190e5765998dae5b6e81c9c
+88b1e6c1baa9cfbd8de29fe4c60154b3ea762b90 refs/tags/v1.5.4
+8fda1f42d0c8906f7ad7370d76c089af60bc81b2 refs/tags/v1.5.5
+63587d5071b77e22d693c075506b382be8978339 refs/tags/v1.6.0-beta.15
+^f5e828c9ce222bc09a29804ad3d8111fb345dc2b
+bcf58c7ce90552b3e7b83cf30c85773dc9ba4530 refs/tags/v1.6.0-beta.16
+^cbedcb3d2040d923e74261aafa06e2cedadeb585
+8d712cd288b80ca1f5f26b20046888d162eae4fe refs/tags/v2.0.0
