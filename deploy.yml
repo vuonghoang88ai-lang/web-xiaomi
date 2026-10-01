@@ -1,0 +1,31 @@
+---
+- name: Triển khai dự án bằng Ansible
+  hosts: "{{ target_env }}"
+  become: yes
+
+  vars:
+    deploy_dir: "/home/ubuntu/michinhhang"
+
+  tasks:
+    - name: Cấp quyền và khởi tạo thư mục dự án
+      file:
+        path: "{{ deploy_dir }}"
+        state: directory
+        owner: ubuntu
+        group: www-data
+        mode: '0775'
+
+    - name: Đồng bộ mã nguồn từ Jenkins sang Server đích
+      synchronize:
+        src: "./"
+        dest: "{{ deploy_dir }/"
+        rsync_opts:
+          - "--exclude=.git"
+          - "--exclude=wp-content/uploads/"
+
+    - name: Thực thi Docker Compose
+      shell: |
+        docker compose build
+        docker compose up -d --remove-orphans
+      args:
+        chdir: "{{ deploy_dir }}"

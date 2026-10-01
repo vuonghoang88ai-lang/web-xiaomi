@@ -2,8 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DEPLOY_USER = "ubuntu"
-        DEPLOY_DIR = "/home/ubuntu/michinhhang"
+        // Chỉ giữ lại thông tin Telegram để gửi cảnh báo
         TELEGRAM_TOKEN = "7834830282:AAGupEEZ4IYjfmO_FkNFFsmBVzd6F1JpxPg"
         TELEGRAM_CHAT_ID = "5094340711"
     }
@@ -13,47 +12,34 @@ pipeline {
             steps {
                 script {
                     if (env.BRANCH_NAME == 'main') {
-                        env.TARGET_IP = "192.168.2.74"
+                        env.ANSIBLE_TARGET = "live"
                         env.ENV_NAME = "LIVE (Chính thức)"
+                        env.SHOULD_DEPLOY = "true"
                     } else if (env.BRANCH_NAME == 'staging') {
-                        env.TARGET_IP = "192.168.2.80"
+                        env.ANSIBLE_TARGET = "staging"
                         env.ENV_NAME = "STAGING (Thử nghiệm)"
+                        env.SHOULD_DEPLOY = "true"
                     } else {
-                        error("Nhánh ${env.BRANCH_NAME} không được phép Deploy tự động!")
+                        env.ENV_NAME = "TESTING"
+                        env.SHOULD_DEPLOY = "false"
+                        echo "ℹ️ Nhánh ${env.BRANCH_NAME} là nhánh tính năng. Chỉ test, không Deploy."
                     }
                 }
-                echo "🚀 Đang triển khai code từ nhánh [${env.BRANCH_NAME}] lên môi trường [${env.ENV_NAME}] tại IP: ${env.TARGET_IP}"
             }
         }
 
-        stage('🛡 Sao lưu Database') {
+        stage('🛡 Sao lưu & 🚀 Triển khai (Bằng Ansible)') {
+            when { environment name: 'SHOULD_DEPLOY', value: 'true' }
             steps {
                 sh """
-                ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${TARGET_IP} '
+                # 1. Gọi lệnh sao lưu cũ (bạn có thể đưa cả bước này vào Ansible sau nếu muốn)
+                ssh -o StrictHostKeyChecking=no ubuntu@\$(if [ "${env.ANSIBLE_TARGET}" = "live" ]; then echo "192.168.2.74"; else echo "192.168.2.80"; fi) '
                     mkdir -p /home/ubuntu/backups &&
-                    mkdir -p ${DEPLOY_DIR} &&
-                    cd ${DEPLOY_DIR} &&
-                    (docker compose exec -T db mysqldump -u wp_user -pwp_password wordpress > /home/ubuntu/backups/db_backup_\$(date +%Y%m%d_%H%M%S).sql || echo "Bỏ qua backup vì Database chưa khởi tạo")
+                    (docker compose -f /home/ubuntu/michinhhang/docker-compose.yml exec -T db mysqldump -u wp_user -pwp_password wordpress > /home/ubuntu/backups/db_backup_\$(date +%Y%m%d_%H%M%S).sql || echo "Bỏ qua backup")
                 '
-                """
-            }
-        }
-
-        stage('🚢 Truyền Code siêu tốc') {
-            steps {
-                sh "ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${TARGET_IP} 'sudo chown -R ${DEPLOY_USER}:www-data ${DEPLOY_DIR} && sudo chmod -R 775 ${DEPLOY_DIR}' || true"
-                sh "rsync -avz -e 'ssh -o StrictHostKeyChecking=no' --exclude='.git' --exclude='wp-content/uploads/' ./ ${DEPLOY_USER}@${TARGET_IP}:${DEPLOY_DIR}/"
-            }
-        }
-
-        stage('⚙️ Triển khai Hệ thống') {
-            steps {
-                sh """
-                ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${TARGET_IP} '
-                    cd ${DEPLOY_DIR} &&
-                    docker compose build &&
-                    docker compose up -d --remove-orphans
-                '
+                
+                # 2. Bàn giao việc rsync và chạy Docker cho Tổng thầu Ansible
+                ansible-playbook -i inventory.ini deploy.yml -e "target_env=${env.ANSIBLE_TARGET}"
                 """
             }
         }
@@ -64,14 +50,14 @@ pipeline {
             sh """
             curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
             -d chat_id=${TELEGRAM_CHAT_ID} \
-            -d text="✅ [SUCCESS] Triển khai bản cập nhật nhánh ${env.BRANCH_NAME} lên môi trường ${env.ENV_NAME} THÀNH CÔNG!"
+            -d text="✅ [SUCCESS] Triển khai bản cập nhật nhánh ${env.BRANCH_NAME} lên môi trường ${env.ENV_NAME} bằng Ansible THÀNH CÔNG!"
             """
         }
         failure {
             sh """
             curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
             -d chat_id=${TELEGRAM_CHAT_ID} \
-            -d text="❌ [FAILED] Quá trình triển khai nhánh ${env.BRANCH_NAME} gặp lỗi!"
+            -d text="❌ [FAILED] Quá trình triển khai nhánh ${env.BRANCH_NAME} bằng Ansible gặp lỗi!"
             """
         }
     }
