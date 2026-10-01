@@ -6,9 +6,7 @@ pipeline {
         LIVE_USER = "ubuntu"
         LIVE_DIR = "/home/ubuntu/michinhhang"
         
-        // Khai báo thông tin Telegram tại đây
-        TELEGRAM_TOKEN = "ĐIỀN_TOKEN_CỦA_BẠN_VÀO_ĐÂY"
-        TELEGRAM_CHAT_ID = "ĐIỀN_CHAT_ID_CỦA_BẠN_VÀO_ĐÂY"
+        
         // Cấu hình Telegram Bot
         TELEGRAM_TOKEN = "7834830282:AAGupEEZ4IYjfmO_FkNFFsmBVzd6F1JpxPg"
         TELEGRAM_CHAT_ID = "ĐIỀN_CHAT_ID_CỦA_BẠN_VÀO_ĐÂY"
