@@ -7,13 +7,10 @@
     deploy_dir: "/home/ubuntu/michinhhang"
 
   tasks:
-    - name: Cập nhật hệ thống và cài đặt Docker (Tự động)
-      apt:
-        name:
-          - docker.io
-          - docker-compose
-        state: present
-        update_cache: yes
+    - name: Cài đặt Docker bản mới nhất chính chủ (Nếu chưa có)
+      shell: curl -fsSL https://get.docker.com | sh
+      args:
+        creates: /usr/bin/docker
 
     - name: Cấp quyền sử dụng Docker cho user ubuntu
       user:
@@ -37,7 +34,7 @@
           - "--exclude=.git"
           - "--exclude=wp-content/uploads/"
 
-    - name: Thực thi Docker Compose
+    - name: Thực thi Docker Compose (Cú pháp V2 mới nhất)
       shell: |
         docker compose build
         docker compose up -d --remove-orphans
