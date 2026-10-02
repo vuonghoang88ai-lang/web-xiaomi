@@ -28,12 +28,15 @@ pipeline {
             }
         }
 
-        stage('🛡 Bảo mật, Sao lưu & 🚀 Triển khai (Full Ansible)') {
+        stage('🛡 Chuỗi tự động hóa: Bảo mật & 🚀 Triển khai') {
             when { environment name: 'SHOULD_DEPLOY', value: 'true' }
             steps {
                 sh """
+                # 0. Tự động tải các thư viện Ansible (ví dụ: Proxmox API) từ file requirements
+                ansible-galaxy install -r requirements.yml
+
                 # 1. Củng cố bảo mật hạ tầng trước (Trụ cột 5 - Security)
-                ansible-playbook -i inventory.ini security.yml -e "target_env=${env.ANSIBLE_TARGET}"
+                ansible-playbook -i inventory.ini 2_security.yml -e "target_env=${env.ANSIBLE_TARGET}"
 
                 # 2. Gọi lệnh sao lưu DB an toàn trên máy gốc trước khi Deploy
                 ssh -o StrictHostKeyChecking=no ubuntu@\$(if [ "${env.ANSIBLE_TARGET}" = "live" ]; then echo "192.168.2.74"; else echo "192.168.2.80"; fi) '
@@ -41,8 +44,11 @@ pipeline {
                     (docker compose -f /home/ubuntu/michinhhang/docker-compose.yml exec -T db mysqldump -u wp_user -pwp_password wordpress > /home/ubuntu/backups/db_backup_\$(date +%Y%m%d_%H%M%S).sql || echo "Bỏ qua backup")
                 '
 
-                # 3. Triển khai Rolling Update Không Gián Đoạn (Trụ cột 2 - Deployment)
-                ansible-playbook -i inventory.ini deploy.yml -e "target_env=${env.ANSIBLE_TARGET}"
+                # 3. Chạy Nhạc trưởng kiểm tra tình trạng hệ thống (Trụ cột 4 - Đang ẩn chờ tách DB)
+                # ansible-playbook -i inventory.ini 3_orchestration.yml
+
+                # 4. Triển khai Rolling Update Không Gián Đoạn (Trụ cột 2 - Deployment)
+                ansible-playbook -i inventory.ini 4_deploy_rolling.yml -e "target_env=${env.ANSIBLE_TARGET}"
                 """
             }
         }
