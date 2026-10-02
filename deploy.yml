@@ -5,10 +5,11 @@
 
   vars:
     deploy_dir: "/home/ubuntu/michinhhang"
+
   tasks:
     - name: Cập nhật hệ thống và cài đặt Docker (Tự động)
       apt:
-        name: 
+        name:
           - docker.io
           - docker-compose
         state: present
@@ -19,7 +20,7 @@
         name: ubuntu
         groups: docker
         append: yes
-  tasks:
+
     - name: Cấp quyền và khởi tạo thư mục dự án
       file:
         path: "{{ deploy_dir }}"
@@ -31,7 +32,7 @@
     - name: Đồng bộ mã nguồn từ Jenkins sang Server đích
       synchronize:
         src: "./"
-        dest: "{{ deploy_dir }/"
+        dest: "{{ deploy_dir }}/"
         rsync_opts:
           - "--exclude=.git"
           - "--exclude=wp-content/uploads/"
