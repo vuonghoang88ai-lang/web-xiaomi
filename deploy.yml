@@ -5,7 +5,20 @@
 
   vars:
     deploy_dir: "/home/ubuntu/michinhhang"
+  tasks:
+    - name: Cập nhật hệ thống và cài đặt Docker (Tự động)
+      apt:
+        name: 
+          - docker.io
+          - docker-compose
+        state: present
+        update_cache: yes
 
+    - name: Cấp quyền sử dụng Docker cho user ubuntu
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
   tasks:
     - name: Cấp quyền và khởi tạo thư mục dự án
       file:
