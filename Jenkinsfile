@@ -33,7 +33,7 @@ pipeline {
             steps {
                 sh """
                 # 0. Tự động tải các thư viện Ansible (ví dụ: Proxmox API) từ file requirements
-                ansible-galaxy install -r requirements.yml
+                ansible-galaxy install -r requirements.yml --force
 
                 # 1. Củng cố bảo mật hạ tầng trước (Trụ cột 5 - Security)
                 ansible-playbook -i inventory.ini 2_security.yml -e "target_env=${env.ANSIBLE_TARGET}"
