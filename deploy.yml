@@ -7,10 +7,17 @@
     deploy_dir: "/home/ubuntu/michinhhang"
 
   tasks:
-    - name: Cài đặt Docker bản mới nhất chính chủ (Nếu chưa có)
+    - name: Gỡ bỏ Docker bản cũ (nếu có) để tránh xung đột
+      apt:
+        name:
+          - docker.io
+          - docker-compose
+        state: absent
+
+    - name: Cài đặt Docker bản mới nhất chính chủ
       shell: curl -fsSL https://get.docker.com | sh
       args:
-        creates: /usr/bin/docker
+        creates: /usr/libexec/docker/cli-plugins/docker-compose
 
     - name: Cấp quyền sử dụng Docker cho user ubuntu
       user:
