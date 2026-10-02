@@ -1,0 +1,93 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'VM_ID', defaultValue: '303', description: 'Nhập ID cho máy ảo Proxmox mới')
+        string(name: 'VM_NAME', defaultValue: 'Web-Live-Auto', description: 'Nhập định danh máy ảo Proxmox')
+        string(name: 'VM_IP', defaultValue: '192.168.2.89', description: 'Nhập địa chỉ IP tĩnh cho máy ảo')
+    }
+
+    environment {
+        TELEGRAM_TOKEN = "7834830282:AAGupEEZ4IYjfmO_FkNFFsmBVzd6F1JpxPg"
+        TELEGRAM_CHAT_ID = "5094340711"
+        VAULT_ADDR = "http://127.0.0.1:8200"
+        
+        // Lấy token bảo mật từ Jenkins Credentials đã cấu hình
+        VAULT_TOKEN = credentials('vault-root-token')
+    }
+
+    stages {
+        stage('🔒 1. Mở két sắt Vault (Lấy mật khẩu an toàn)') {
+            steps {
+                script {
+                    env.VAULT_PROXMOX_PASS = sh(script: "VAULT_TOKEN=${env.VAULT_TOKEN} vault kv get -field=api_password secret/proxmox", returnStdout: true).trim()
+                    env.VAULT_CLOUDINIT_PASS = sh(script: "VAULT_TOKEN=${env.VAULT_TOKEN} vault kv get -field=cloudinit_password secret/proxmox", returnStdout: true).trim()
+                    env.VAULT_SSH_PUB_KEY = sh(script: "VAULT_TOKEN=${env.VAULT_TOKEN} vault kv get -field=ssh_pub_key secret/proxmox", returnStdout: true).trim()
+                }
+            }
+        }
+
+        stage('💻 2. Tự động cấp phát máy ảo trên Proxmox') {
+            steps {
+                sh """
+                ansible-galaxy install -r requirements.yml --force
+                ansible-playbook 1_provision.yml \
+                  -e "new_vm_id=${params.VM_ID}" \
+                  -e "new_vm_name=${params.VM_NAME}" \
+                  -e "new_vm_ip=${params.VM_IP}" \
+                  -e "new_vm_gw=192.168.2.1"
+                """
+            }
+        }
+
+        stage('🚦 3. Phân luồng Môi trường Deploy') {
+            steps {
+                script {
+                    if (env.BRANCH_NAME == 'main') {
+                        env.ANSIBLE_TARGET = "live"
+                        env.ENV_NAME = "LIVE (Chính thức)"
+                        env.SHOULD_DEPLOY = "true"
+                    } else if (env.BRANCH_NAME == 'staging') {
+                        env.ANSIBLE_TARGET = "staging"
+                        env.ENV_NAME = "STAGING (Thử nghiệm)"
+                        env.SHOULD_DEPLOY = "true"
+                    } else {
+                        env.ENV_NAME = "TESTING"
+                        env.SHOULD_DEPLOY = "false"
+                        echo "ℹ️ Nhánh ${env.BRANCH_NAME} là nhánh tính năng. Chỉ test cấp phát VM, không Deploy ứng dụng."
+                    }
+                }
+            }
+        }
+
+        stage('🛡 4. Chuỗi tự động hóa: Bảo mật & 🚀 Triển khai ứng dụng') {
+            when { environment name: 'SHOULD_DEPLOY', value: 'true' }
+            steps {
+                sh """
+                ansible-playbook -i inventory.ini 2_security.yml -e "target_env=${env.ANSIBLE_TARGET}"
+                ssh -o StrictHostKeyChecking=no ubuntu@\$(if [ "${env.ANSIBLE_TARGET}" = "live" ]; then echo "192.168.2.74"; else echo "192.168.2.80"; fi) '
+                    mkdir -p /home/ubuntu/backups &&
+                    (docker compose -f /home/ubuntu/michinhhang/docker-compose.yml exec -T db mysqldump -u wp_user -pwp_password wordpress > /home/ubuntu/backups/db_backup_\$(date +%Y%m%d_%H%M%S).sql || echo "Bỏ qua backup")
+                '
+                ansible-playbook -i inventory.ini 4_deploy_rolling.yml -e "target_env=${env.ANSIBLE_TARGET}"
+                """
+            }
+        }
+    }
+
+    // ĐÃ LOẠI BỎ HOÀN TOÀN CÁC KHỐI NODE THỪA TRONG POST ĐỂ TRÁNH TREO TIẾN TRÌNH
+    post {
+        success {
+            script {
+                def successMsg = "✅ [JENKINS SUCCESS]\n- Tạo máy ảo thành công: ${params.VM_NAME} (ID: ${params.VM_ID}, IP: ${params.VM_IP})\n- Nhánh: ${env.BRANCH_NAME}\n- Môi trường: ${env.ENV_NAME}"
+                sh "curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage -d chat_id=${TELEGRAM_CHAT_ID} -d text=\"${successMsg}\""
+            }
+        }
+        failure {
+            script {
+                def failMsg = "❌ [JENKINS FAILED]\n- Quá trình chạy Pipeline xử lý máy ảo ${params.VM_NAME} hoặc triển khai gặp sự cố.\n- Vui lòng kiểm tra lại log trên Jenkins."
+                sh "curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage -d chat_id=${TELEGRAM_CHAT_ID} -d text=\"${failMsg}\""
+            }
+        }
+    }
+}
