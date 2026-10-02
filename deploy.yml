@@ -28,7 +28,7 @@
 
     - name: Kiểm tra ứng dụng đã lên sóng chưa (Chờ HTTP 200 OK)
       uri:
-        url: "http://localhost:80" # Đợi cho đến khi app trả về 200 mới đi tiếp
+        url: "http://localhost:8080" # Đợi cho đến khi app trả về 200 mới đi tiếp
         status_code: 200
       register: result
       until: result.status == 200
