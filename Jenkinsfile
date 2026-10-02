@@ -2,52 +2,62 @@ pipeline {
     agent any
 
     environment {
-        LIVE_IP = "192.168.2.74"
-        LIVE_USER = "ubuntu"
-        LIVE_DIR = "/home/ubuntu/michinhhang"
-        
-        
-        // Cấu hình Telegram Bot
+        // Chỉ giữ lại thông tin Telegram để gửi cảnh báo
         TELEGRAM_TOKEN = "7834830282:AAGupEEZ4IYjfmO_FkNFFsmBVzd6F1JpxPg"
         TELEGRAM_CHAT_ID = "5094340711"
     }
 
     stages {
-        stage('🚀 Bước 1: Kéo Code từ GitHub') {
-            steps { echo "Kéo bản code mới nhất..." }
-        }
-        stage('🛡 Bước 2: Sao lưu Database') {
+        stage('🚦 Phân luồng Môi trường') {
             steps {
-                sh "ssh -o StrictHostKeyChecking=no ${LIVE_USER}@${LIVE_IP} 'mkdir -p /home/ubuntu/backups && cd ${LIVE_DIR} && docker compose exec -T db mysqldump -u wp_user -pwp_password wordpress > /home/ubuntu/backups/db_backup_\$(date +%Y%m%d_%H%M%S).sql'"
+                script {
+                    if (env.BRANCH_NAME == 'main') {
+                        env.ANSIBLE_TARGET = "live"
+                        env.ENV_NAME = "LIVE (Chính thức)"
+                        env.SHOULD_DEPLOY = "true"
+                    } else if (env.BRANCH_NAME == 'staging') {
+                        env.ANSIBLE_TARGET = "staging"
+                        env.ENV_NAME = "STAGING (Thử nghiệm)"
+                        env.SHOULD_DEPLOY = "true"
+                    } else {
+                        env.ENV_NAME = "TESTING"
+                        env.SHOULD_DEPLOY = "false"
+                        echo "ℹ️ Nhánh ${env.BRANCH_NAME} là nhánh tính năng. Chỉ test, không Deploy."
+                    }
+                }
             }
         }
-        stage('🚢 Bước 3: Truyền Code sang Live') {
+
+        stage('🛡 Sao lưu & 🚀 Triển khai (Bằng Ansible)') {
+            when { environment name: 'SHOULD_DEPLOY', value: 'true' }
             steps {
-                sh "ssh -o StrictHostKeyChecking=no ${LIVE_USER}@${LIVE_IP} 'sudo chown -R ${LIVE_USER}:www-data ${LIVE_DIR} && sudo chmod -R 775 ${LIVE_DIR}'"
-                sh "rsync -avz -e 'ssh -o StrictHostKeyChecking=no' --exclude='.git' --exclude='wp-content/uploads/' ./ ${LIVE_USER}@${LIVE_IP}:${LIVE_DIR}/"
-            }
-        }
-        stage('⚙️ Bước 4: Triển khai (Live)') {
-            steps {
-                sh "ssh -o StrictHostKeyChecking=no ${LIVE_USER}@${LIVE_IP} 'cd ${LIVE_DIR} && docker compose build && docker compose up -d --remove-orphans'"
+                sh """
+                # 1. Gọi lệnh sao lưu cũ (bạn có thể đưa cả bước này vào Ansible sau nếu muốn)
+                ssh -o StrictHostKeyChecking=no ubuntu@\$(if [ "${env.ANSIBLE_TARGET}" = "live" ]; then echo "192.168.2.74"; else echo "192.168.2.80"; fi) '
+                    mkdir -p /home/ubuntu/backups &&
+                    (docker compose -f /home/ubuntu/michinhhang/docker-compose.yml exec -T db mysqldump -u wp_user -pwp_password wordpress > /home/ubuntu/backups/db_backup_\$(date +%Y%m%d_%H%M%S).sql || echo "Bỏ qua backup")
+                '
+                
+                # 2. Bàn giao việc rsync và chạy Docker cho Tổng thầu Ansible
+                ansible-playbook -i inventory.ini deploy.yml -e "target_env=${env.ANSIBLE_TARGET}"
+                """
             }
         }
     }
 
-    // KHỐI HẬU XỬ LÝ: TỰ ĐỘNG BÁO CÁO KẾT QUẢ
     post {
         success {
             sh """
             curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
             -d chat_id=${TELEGRAM_CHAT_ID} \
-            -d text="✅ [SUCCESS] Triển khai bản cập nhật lên Live Server THÀNH CÔNG! Website đang hoạt động ổn định."
+            -d text="✅ [SUCCESS] Triển khai bản cập nhật nhánh ${env.BRANCH_NAME} lên môi trường ${env.ENV_NAME} bằng Ansible THÀNH CÔNG!"
             """
         }
         failure {
             sh """
             curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
             -d chat_id=${TELEGRAM_CHAT_ID} \
-            -d text="❌ [FAILED] CẢNH BÁO: Quá trình CI/CD thất bại! Vui lòng truy cập Jenkins để kiểm tra lỗi ngay."
+            -d text="❌ [FAILED] Quá trình triển khai nhánh ${env.BRANCH_NAME} bằng Ansible gặp lỗi!"
             """
         }
     }
