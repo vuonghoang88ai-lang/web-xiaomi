@@ -91,8 +91,9 @@ def classify_intent_fsm(query: str, project: Optional[Dict[str, Any]] = None) ->
             guide = (
                 "\n\n[INTENT_MODE: TIER 2 - DELIVERABLE BLOG EDITORIAL]:\n"
                 "Người dùng yêu cầu viết BÀI VIẾT BLOG CHUẨN SEO (SOP 12). Xuất bản 100% nội dung bài viết hoàn chỉnh ngay (CẤM dừng ở dàn ý).\n"
-                "Cấu trúc bắt buộc: Tiêu đề H1 thu hút, Hook mở đầu 4 dòng, Các đề mục H2/H3 chuyên sâu E-E-A-T, Phân tích thực chứng, "
-                "FAQ Schema và Kết bài kèm Call-to-Action tự nhiên."
+                "Độc giả mục tiêu: 100% Người tiêu dùng cá nhân & Gia đình (B2C End-Users). Giọng văn Chuyên gia Cố vấn Tiêu dùng tận tâm, khách quan.\n"
+                "Cấu trúc bắt buộc: Tiêu đề H1 thu hút, Mở bài trực diện (BLUF), Đánh giá nghe nhìn thực tế & độ bền gia đình, So sánh P/P với đối thủ cùng tầm giá, "
+                "Cẩm nang chọn size phòng, Dịch vụ lắp đặt tận nhà và Chính sách bảo hành an tâm."
             )
             return "DELIVERABLE_BLOG", guide
 

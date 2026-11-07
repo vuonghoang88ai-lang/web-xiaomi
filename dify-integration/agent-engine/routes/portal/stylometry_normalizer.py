@@ -121,6 +121,13 @@ def sanitize_ai_footprints(text: str) -> str:
 
     # 4. Thanh lọc các cụm từ sáo rỗng AI
     t, _ = purge_ai_cliches(t)
+
+    # 5. Khử trùng ngôn từ lệch pha B2B / kho bãi nội bộ sang góc nhìn người tiêu dùng (B2C)
+    t = re.sub(r"để được chủ kho trực tiếp tư vấn", "để được chuyên viên tư vấn tận tâm", t, flags=re.I)
+    t = re.sub(r"chủ kho trực tiếp tư vấn", "chuyên viên tư vấn tận tâm", t, flags=re.I)
+    t = re.sub(r"tại kho chúng tôi", "tại hệ thống chúng tôi", t, flags=re.I)
+    t = re.sub(r"tại kho(?=[\s,\.\)])", "tại hệ thống", t, flags=re.I)
+    t = re.sub(r"thống kê tại kho", "thống kê thực tế từ người dùng", t, flags=re.I)
     return t
 
 

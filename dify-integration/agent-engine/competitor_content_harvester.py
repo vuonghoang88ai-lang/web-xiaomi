@@ -162,14 +162,24 @@ def build_competitor_grounding_block(
         lines.append("")
 
     lines.extend([
-        "💡 CHỈ ĐẠO CHIẾN LƯỢC ĐÈ BẸP ĐỐI THỦ (OUTRANKING & HUMAN EXPERTISE):",
-        "1. KHOẢNG TRỐNG NỘI DUNG (CONTENT GAPS): Đối thủ chỉ dừng lại ở việc chép lại thông số kỹ thuật của hãng và phân tích lý thuyết chung chung.",
-        f"2. BẮT CẦU THỰC CHIẾN: Bạn BẮT BUỘC mang góc nhìn của thợ kỹ thuật/chủ kho điện máy {brand_name} để giải quyết triệt để các khúc mắc thật của người dùng (ví dụ: bản nội địa vs quốc tế, bắt wifi xa bị giật thì xử lý thế nào, thói quen tắt nguồn standby làm hỏng board mạch, cam kết bảo hành lỗi 1 đổi 1 tận nơi).",
-        "3. QUY TẮC KHỬ DẤU HIỆU AI (ZERO AI CLICHES - BẮT BUỘC):",
+        "💡 CHỈ ĐẠO CHIẾN LƯỢC ĐÈ BẸP ĐỐI THỦ (HƯỚNG ĐẾN 100% NGƯỜI TIÊU DÙNG CUỐI):",
+        "1. ĐỘC GIẢ MỤC TIÊU (TARGET AUDIENCE): Người tiêu dùng cá nhân & gia đình đang tìm hiểu để chọn mua tivi. "
+        "TUYỆT ĐỐI CẤM viết theo giọng văn 'chủ kho', 'bán buôn' hay 'sổ tay thợ sửa chữa'.",
+        "2. VAI TRÒ & GỌC NHÌN (PERSONA): Bạn là Chuyên Gia Cố Vấn Tiêu Dùng Công Nghệ (Consumer Advocate & Tech Reviewer) tận tâm, khách quan, đặt quyền lợi và trải nghiệm của người mua lên hàng đầu.",
+        "3. TRỌNG TÂM TRẢI NGHIỆM GIA ĐÌNH:",
+        "   - Đánh giá nghe nhìn thực tế: Màn hình 4K xem bóng đá/phim có mượt không, màu sắc ra sao, loa tivi nghe thời sự có to và rõ không.",
+        "   - Thao tác thực tế: Tìm kiếm giọng nói tiếng Việt bằng Remote có nhạy không, bố mẹ lớn tuổi hay trẻ nhỏ có dễ sử dụng không.",
+        "   - Độ bền thực tế: Dùng 5-8 năm có bền không, cách bảo quản chống ẩm mùa nồm để dùng bền lâu.",
+        "   - So sánh P/P (Giá trị trên giá thành): Cùng tầm tiền 5 - 12 triệu so với Samsung, LG, Sony, TCL thì Xiaomi hơn gì và đánh đổi gì.",
+        "   - Hướng dẫn chọn size theo phòng: Phòng ngủ 15m² (43 inch), phòng khách 20-30m² (55-65 inch).",
+        "   - Dịch vụ an tâm cho người mua: Hỗ trợ vận chuyển & lắp đặt tận phòng khách, hướng dẫn cài đặt Netflix/YouTube tại nhà, bảo hành chính hãng tận nơi 24 tháng, lỗi 1 đổi 1 trong 30 ngày.",
+        "4. QUY TẮC KHỬ DẤU HIỆU AI & NGÔN TỪ LỆCH PHA (BẮT BUỘC):",
+        "   - TUYỆT ĐỐI CẤM các từ: 'chủ kho', 'tại kho chúng tôi', 'thay board nguồn 500-700k', 'thống kê lỗi tại kho', 'mua USB LAN tại kho'.",
         "   - CẤM đặt emoji ở đầu mọi thẻ H2/H3 (như 🔍, 📊, 🛡️, 🔧...). Tiêu đề phải trang trọng, tự nhiên chuẩn báo chí công nghệ.",
         "   - CẤM đưa các thuật ngữ nội bộ như 'E-E-A-T', 'Anti-Persona', 'PAA', 'Schema', '# 👑 BÀI VIẾT HOÀN CHỈNH...' vào bài viết cho khách hàng.",
-        "   - CẤM bịa đặt bảng số liệu phần trăm học thuật giả tạo (như '4.3% wifi yếu', '1.2% lỗi'). Hãy dùng trải nghiệm thực tế tại kho.",
-        "   - CẤM mở bài bằng câu sáo rỗng 'Bạn đang phân vân giữa... Bài viết này không chỉ... mà còn...'. Hãy đi thẳng vào câu trả lời ngay đoạn mở đầu (BLUF)."
+        "   - CẤM bịa đặt bảng số liệu phần trăm học thuật giả tạo (như '4.3% wifi yếu', '1.2% lỗi').",
+        "   - CẤM mở bài bằng câu sáo rỗng 'Bạn đang phân vân giữa... Bài viết này không chỉ... mà còn...'. Hãy đi thẳng vào câu trả lời đánh giá ngay đoạn đầu tiên (BLUF)."
     ])
 
     return "\n".join(lines)
+
