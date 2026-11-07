@@ -97,6 +97,7 @@ function renderMySiteTab(mySiteAudit, project, seedAnalysis) {
     const dynamicTopics = seedCategories.length > 0 
       ? seedCategories.slice(0, 4).join(', ') 
       : (navList.length > 0 ? navList.slice(0, 4).join(', ') : 'Chuyên mục cốt lõi & Dịch vụ trọng tâm');
+    const hasCms = Boolean(project.cms_api_url && project.cms_auth_config && (typeof project.cms_auth_config === 'object' ? project.cms_auth_config.api_key : true));
     const eeatLocked = !!bp.eeat_locked;
     const brandNameDisplay = typeof resolveBrandEntity === 'function'
       ? resolveBrandEntity(project, bp, audit)
@@ -108,9 +109,15 @@ function renderMySiteTab(mySiteAudit, project, seedAnalysis) {
         <div style="font-size: 13px; color: var(--text-muted);">
           Báo cáo khảo sát thực tế URL: <a href="${escapeHtml(targetUrl)}" target="_blank" style="color: var(--primary); text-decoration: none; font-weight: 600;">${escapeHtml(targetUrl)} ↗</a>
         </div>
-        <div style="font-size: 11.5px; color: #34d399; background: rgba(16, 185, 129, 0.12); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.25);">
-          ✓ Kết nối Omni Bridge Trực Tiếp 100%
-        </div>
+        ${hasCms ? `
+          <div style="font-size: 11.5px; color: #34d399; background: rgba(16, 185, 129, 0.12); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.25);">
+            ✓ Kết nối Omni Bridge Trực Tiếp 100%
+          </div>
+        ` : `
+          <div style="font-size: 11.5px; color: #f59e0b; background: rgba(245, 158, 11, 0.12); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(245, 158, 11, 0.25); cursor: pointer;" onclick="document.querySelector('[data-tab=\\'cms\\']')?.click()" title="Nhấn để thiết lập kết nối WordPress">
+            ⚠️ Chưa kết nối Omni Bridge (Bấm để liên kết)
+          </div>
+        `}
       </div>
 
       <!-- 1. THẺ TỔNG QUAN CHỈ SỐ SỨC KHỎE ON-PAGE -->

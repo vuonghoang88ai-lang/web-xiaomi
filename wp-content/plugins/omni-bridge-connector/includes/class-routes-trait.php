@@ -155,6 +155,14 @@ trait RoutesTrait {
             $authorized = true;
         }
 
+        // SOP 48: Tự động lưu License Key khi nhận request hợp lệ từ Portal
+        if ($authorized && empty($configured_lic) && !empty($license_header) && strpos($license_header, 'OMNI-') === 0) {
+            update_option('omni_bridge_license_key', $license_header);
+            update_option('omni_bridge_allowed_domain', $this->get_current_host_domain());
+            update_option('omni_bridge_plan_label', 'Dùng Thử (Auto-Handshake)');
+            update_option('omni_bridge_expires_at', date('c', strtotime('+7 days')));
+        }
+
         if (!$authorized) {
             return new WP_Error('unauthorized', 'Invalid or missing Omni Bridge API secret key.', array('status' => 401));
         }

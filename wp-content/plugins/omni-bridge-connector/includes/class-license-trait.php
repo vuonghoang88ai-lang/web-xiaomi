@@ -64,7 +64,7 @@ trait Omni_Bridge_License_Trait {
         $current_host = $this->get_current_host_domain();
         $is_ip = filter_var($current_host, FILTER_VALIDATE_IP) !== false;
         $is_priv_ip = $is_ip && (filter_var($current_host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false);
-        $is_local = in_array($current_host, ['localhost', '127.0.0.1', 'wordpress', 'michinhhang-wordpress-1']);
+        $is_local = in_array($current_host, ['localhost', '127.0.0.1', 'wordpress', 'michinhhang-wordpress-1']) || strpos($current_host, '100.') === 0;
 
         if ($is_local || $is_priv_ip) {
             return [

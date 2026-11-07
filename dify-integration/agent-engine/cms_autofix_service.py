@@ -36,11 +36,20 @@ def execute_project_onpage_autofix(project_id: str, custom_seo: Optional[dict] =
         raise HTTPException(status_code=404, detail="Không tìm thấy dự án.")
 
     cms_url = (project.get("cms_api_url") or "").rstrip('/')
-    if os.path.exists("/.dockerenv") and ("127.0.0.1:8080" in cms_url or "localhost:8080" in cms_url):
-        cms_url = cms_url.replace("127.0.0.1:8080", "wordpress:80").replace("localhost:8080", "wordpress:80")
     auth_config_raw = project.get("cms_auth_config") or "{}"
     auth_config = json.loads(auth_config_raw) if isinstance(auth_config_raw, str) else auth_config_raw
     api_key = auth_config.get("api_key", "").strip()
+
+    # Tự động khắc phục kết nối fallback nếu chưa cấu hình riêng (SOP 47 & 48)
+    if not cms_url and project.get("target_website_url"):
+        target_site = project.get("target_website_url", "").rstrip('/')
+        if any(h in target_site for h in ["100.", "127.0.0.1", "localhost", "wordpress"]):
+            cms_url = target_site
+    if not api_key and os.getenv("OMNI_BRIDGE_KEY"):
+        api_key = os.getenv("OMNI_BRIDGE_KEY", "").strip()
+
+    if os.path.exists("/.dockerenv") and ("127.0.0.1:8080" in cms_url or "localhost:8080" in cms_url):
+        cms_url = cms_url.replace("127.0.0.1:8080", "wordpress:80").replace("localhost:8080", "wordpress:80")
     if not cms_url or not api_key:
         raise HTTPException(status_code=400, detail="Website chưa kết nối Omni Bridge Connector. Vui lòng kiểm tra lại kết nối.")
 
