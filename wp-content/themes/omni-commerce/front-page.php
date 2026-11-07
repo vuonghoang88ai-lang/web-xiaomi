@@ -5,7 +5,16 @@ if ( ! defined( 'ABSPATH' ) ) {
  get_header(); ?>
 
 <main id="primary" class="overflow-x-clip">
-    <h1 style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;"><?php esc_html_e( 'TongKhoMi.com - Tổng kho phân phối sản phẩm Xiaomi chính hãng', 'omni-commerce' ); ?></h1>
+    <?php
+    if ( ! defined( 'OMNI_BRIDGE_H1_RENDERED' ) ) {
+        define( 'OMNI_BRIDGE_H1_RENDERED', true );
+    }
+    $h1_text = get_option( 'omni_bridge_homepage_h1' );
+    if ( empty( $h1_text ) ) {
+        $h1_text = get_bloginfo( 'description' ) ?: get_bloginfo( 'name' );
+    }
+    ?>
+    <h1 style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;"><?php echo esc_html( $h1_text ); ?></h1>
 
 <?php get_template_part( 'template-parts/home/hero' ); ?>
 

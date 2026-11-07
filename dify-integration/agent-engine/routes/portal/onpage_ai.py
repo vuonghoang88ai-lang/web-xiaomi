@@ -1,8 +1,9 @@
 """
 SOP 57: Hybrid AI On-page Creative Synthesizer.
 Tích hợp kiến trúc lai (Two-tier Hybrid):
-- Kết hợp AI suy luận động (LLM) và Bộ lọc Khử Trùng AI (Zero-AI Cliches Scrubbing).
+- Kết hợp Ma trận Góc độ Khách hàng (Consumer-Centric B2C Matrix) & Khử Trùng AI.
 - Tuân thủ nghiêm ngặt độ dài SEO (Title 40-65kt, Description 120-155kt, H1 20-80kt).
+- Triệt tiêu hoàn toàn từ cụt lơ lửng (Tại, Và, Cho...) và hiện tượng lặp lại.
 Tuân thủ SOP 23 (<= 300 dòng) và SOP 30 (Zero Hardcoding).
 """
 
@@ -11,11 +12,9 @@ import os
 import re
 import json
 import logging
-import urllib.request
-import urllib.error
 import random
 from pydantic import BaseModel
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 import db_service
 
 logger = logging.getLogger("marketing_engine.onpage_ai")
@@ -32,12 +31,24 @@ class OnpageAiSuggestRequest(BaseModel):
     existing_variants: Optional[List[str]] = []
 
 
+def _format_brand(brand: str) -> str:
+    """Chuẩn hóa tên thương hiệu sang dạng Title Case hoặc giữ nguyên nếu đã có format chuẩn."""
+    b = (brand or "").strip()
+    if not b:
+        return "Thương Hiệu"
+    if b.lower() == "tongkhomi":
+        return "TongKhoMi"
+    if b.islower():
+        return b.capitalize()
+    return b
+
+
 def _clean_and_clamp_seo(text: str, min_len: int, max_len: int, is_sentence: bool = False) -> str:
     """Khử sạch từ sáo rỗng AI, loại bỏ từ treo lơ lửng và kẹp đúng độ dài chuẩn SEO."""
     t = re.sub(r"\s+", " ", text or "").strip()
     t = re.sub(r"^[\"']|[\"']$", "", t)
     
-    # Khử các cụm từ sáo rỗng thường gặp của AI
+    # Khử các cụm từ sáo rỗng AI
     ai_cliches = [
         r"\bhàng đầu\b", r"\btự hào\b", r"\bkhám phá ngay\b", r"\bkhám phá\b",
         r"\bgiải pháp hoàn hảo\b", r"\bđỉnh cao\b", r"\bvượt trội\b",
@@ -48,25 +59,26 @@ def _clean_and_clamp_seo(text: str, min_len: int, max_len: int, is_sentence: boo
     t = re.sub(r"\s+", " ", t).strip()
 
     if len(t) > max_len:
-        t = t[:max_len - 1]
+        t = t[:max_len]
         sp = t.rfind(" ")
-        if sp > min_len - 10:
+        if sp >= min_len - 5:
             t = t[:sp]
-        # Loại bỏ các hư từ/từ nối bị cắt cụt ở cuối câu
-        t = re.sub(r"\s+(?:tại|và|cho|của|ở|là|với|khi|trong|được|bởi|nhất|mới|&)\s*$", "", t, flags=re.IGNORECASE)
-        t = re.sub(r"[,;:\-\s|]+$", "", t)
+        # Vòng lặp loại bỏ triệt để từ nối bị cắt cụt ở cuối câu
+        while True:
+            prev = t
+            t = re.sub(r"[\s,;:\-|/]+$", "", t)
+            t = re.sub(r"\s+(?:tại|và|cho|của|ở|là|với|khi|trong|được|bởi|nhất|mới|&|đến|từ|về|giá)\s*$", "", t, flags=re.IGNORECASE)
+            t = re.sub(r"[\s,;:\-|/]+$", "", t)
+            if t == prev or len(t) < min_len:
+                break
         if is_sentence and not re.search(r"[.!?]$", t):
             t += "."
 
     if len(t) < min_len:
         pad = "Cam kết bảo hành chính hãng, giao hàng tận nơi." if is_sentence else "Chính Hãng"
-        t = f"{t} {pad}".strip()
-        if len(t) > max_len:
-            t = re.sub(r"\s+\S*$", "", t[:max_len - 1]).strip()
-            t = re.sub(r"\s+(?:tại|và|cho|của|ở|là|với|khi|trong|được|bởi|nhất|mới|&)\s*$", "", t, flags=re.IGNORECASE)
-            t = re.sub(r"[,;:\-\s|]+$", "", t)
-            if is_sentence and not re.search(r"[.!?]$", t):
-                t += "."
+        candidate = f"{t} - {pad}".strip() if not is_sentence else f"{t} {pad}".strip()
+        if len(candidate) <= max_len:
+            t = candidate
 
     return t
 
@@ -75,56 +87,115 @@ def _generate_fallback_variant(
     field_type: str, brand: str, cats: List[str], loc: str, archetype: str,
     existing: List[str], cur_val: str
 ) -> str:
-    """Tạo phương án hoán vị sáng tạo đảm bảo không trùng lặp và không bị cụt chữ."""
+    """Tạo phương án hoán vị sáng tạo B2C hướng người tiêu dùng, không cụt chữ."""
+    c_brand = _format_brand(brand)
     c1 = cats[0] if cats else "Sản Phẩm"
     c2 = cats[1] if len(cats) > 1 else "Thiết Bị"
-    pair = f"{c1} & {c2.replace(brand, '').replace('Xiaomi', '').strip() or c2}"
+    pair = f"{c1} & {c2.replace(c_brand, '').replace('Xiaomi', '').strip() or c2}"
 
     opts = []
-    if field_type == "title":
-        opts = [
-            f"{brand} - Phân Phối {c1} Chính Hãng Tại {loc}",
-            f"{brand} | Tổng Kho {c1} Giá Sỉ Tại {loc}",
-            f"{brand} - Đại Lý {c1} Hàng Mới 100% Giá Kho",
-            f"{brand} | {c1} Chính Hãng, Bảo Hành 24T {loc}",
-            f"{brand} - Chuyên {c1} Giá Tận Gốc, Trả Góp 0%",
-            f"{brand} | Bảng Giá {c1} Mới Nhất, Giao 2H {loc}",
-            f"{brand} - Kho {c1} Cam Kết Giá Rẻ Nhất {loc}",
-            f"{brand} | Cung Cấp {c1} Đầy Đủ Hóa Đơn VAT",
-            f"{brand} - Tổng Kho {c1} Miễn Phí Lắp Đặt {loc}",
-            f"{brand} | Mua {c1} Giá Rẻ, Đổi Mới Trong 30 Ngày",
-            f"{brand} - Đại Lý {pair} Uy Tín Tại {loc}",
-            f"{brand} | Bảng Giá Sỉ {c1} Chiết Khấu Cao {loc}",
-            f"{brand} - Hệ Thống Phân Phối {c1} Giá Gốc Tại Kho",
-            f"{brand} | {pair} Giá Tốt, Đồng Kiểm Khi Nhận"
-        ]
-        min_len, max_len, is_sen = 40, 65, False
-    elif field_type == "meta_description":
-        opts = [
-            f"Tổng kho phân phối {c1} chính hãng tại {loc} bởi {brand}. Cam kết giá rẻ hơn đối thủ, bảo hành 24 tháng, giao hỏa tốc 2h.",
-            f"Mua {pair} chính hãng 100% tại kho {brand}. Bảo hành dài hạn, lỗi 1 đổi 1 trong 30 ngày, miễn phí vận chuyển tận nơi tại {loc}.",
-            f"Đại lý cấp 1 phân phối {c1} uy tín tại {loc}. Bảng giá chiết khấu trực tiếp tại kho, hỗ trợ trả góp 0%, đồng kiểm khi nhận.",
-            f"{brand} chuyên cung cấp {pair} chính hãng giá sỉ. Đầy đủ hóa đơn VAT, hỗ trợ lắp đặt tận nơi, tư vấn kỹ thuật chuyên sâu 24/7 tại {loc}.",
-            f"Báo giá {c1} mới nhất tại tổng kho {brand}. Cam kết hàng mới nguyên seal 100%, chiết khấu cao cho đại lý, giao ngay 2h tại {loc}.",
-            f"Địa chỉ mua {pair} chính hãng giá gốc tại {loc}. Ưu đãi chiết khấu trực tiếp tại kho {brand}, bảo hành chính hãng toàn quốc.",
-            f"Hệ thống phân phối {c1} giá sỉ tại {loc}. Đầy đủ giấy tờ xuất xứ CO/CQ, cam kết lỗi đổi mới, giao hàng hỏa tốc trong ngày."
-        ]
-        min_len, max_len, is_sen = 120, 155, True
-    else:  # h1
-        opts = [
-            f"{brand} - Tổng Kho Phân Phối {c1} Chính Hãng Tại {loc}",
-            f"{brand} - Đại Lý Cung Cấp {pair} Uy Tín Giá Gốc",
-            f"{brand} - Hệ Thống Bán Lẻ {c1} Bảo Hành 24 Tháng",
-            f"{brand} - Phân Phối {c1} & {c2} Chiết Khấu Đại Lý Cao",
-            f"{brand} - Trung Tâm Phân Phối {c1} Hàng Mới 100%"
-        ]
-        min_len, max_len, is_sen = 20, 80, False
+    if archetype == "content_media":
+        if field_type == "title":
+            opts = [
+                f"{c_brand} - Đọc Truyện Chữ Online Tuyển Chọn Hay Nhất",
+                f"{c_brand} | Kho Truyện Full Miễn Phí, Cập Nhật Liên Tục",
+                f"{c_brand} - Đọc Truyện Tiên Hiệp, Ngôn Tình Dịch Chuẩn",
+                f"{c_brand} | Trang Đọc Truyện Chữ Tốc Độ Cao Mới Nhất",
+                f"{c_brand} - Đọc Truyện Online Mượt Mà Trên Điện Thoại",
+                f"{c_brand} | Đọc Truyện Full Bộ Miễn Phí, Không Quảng Cáo",
+                f"{c_brand} - Tuyển Tập Truyện Dịch & Convert Đọc Online",
+                f"{c_brand} | Cập Nhật Chương Mới Nhanh Nhất Hàng Ngày"
+            ]
+            min_len, max_len, is_sen = 40, 65, False
+        elif field_type == "meta_description":
+            opts = [
+                f"Đọc truyện chữ online miễn phí tại {c_brand}. Cập nhật liên tục các bộ tiên hiệp, ngôn tình hot nhất, đọc truyện nhanh không quảng cáo rác.",
+                f"Kho truyện chữ {c_brand} với hàng ngàn đầu truyện hoàn thành full chương. Đọc truyện chữ online mượt mà trên mọi thiết bị, cập nhật chương mới mỗi ngày.",
+                f"{c_brand} tuyển chọn truyện dịch và convert chất lượng cao. Đọc full bộ không giới hạn, giao diện tối ưu cho điện thoại, tốc độ tải trang cực nhanh.",
+                f"Cập nhật chương mới nhanh nhất các tác phẩm hot tại {c_brand}. Đọc truyện chữ online chuẩn font, lọc chương lỗi, trải nghiệm đọc trọn vẹn miễn phí."
+            ]
+            min_len, max_len, is_sen = 120, 155, True
+        else:
+            opts = [
+                f"{c_brand} - Nền Tảng Đọc Truyện Chữ Online Tuyển Chọn",
+                f"{c_brand} - Kho Truyện Chữ Full Bộ Miễn Phí Mới Nhất",
+                f"{c_brand} - Trang Đọc Truyện Tiên Hiệp & Ngôn Tình Dịch Chuẩn",
+                f"{c_brand} - Nền Tảng Đọc Sách & Truyện Chữ Tốc Độ Cao"
+            ]
+            min_len, max_len, is_sen = 20, 80, False
+    elif archetype == "service_health_b2b":
+        if field_type == "title":
+            opts = [
+                f"{c_brand} | Dịch Vụ {c1} Chuyên Nghiệp Tại {loc}",
+                f"{c_brand} - Tư Vấn & Triển Khai {c1} Uy Tín Tại {loc}",
+                f"{c_brand} | Bảng Giá Dịch Vụ {c1} Chi Phí Minh Bạch",
+                f"{c_brand} - Dịch Vụ {pair} Trọn Gói, Tận Tâm {loc}",
+                f"{c_brand} | Trung Tâm Tư Vấn {c1} Hỗ Trợ 24/7",
+                f"{c_brand} - Giải Pháp {c1} Đảm Bảo Hiệu Quả Dài Lâu"
+            ]
+            min_len, max_len, is_sen = 40, 65, False
+        elif field_type == "meta_description":
+            opts = [
+                f"{c_brand} cung cấp dịch vụ {c1} chuyên nghiệp, uy tín tại {loc}. Đội ngũ tận tâm, quy trình chuẩn mực, cam kết chi phí minh bạch và bảo hành dài hạn.",
+                f"Trung tâm tư vấn và cung cấp dịch vụ {pair} tại {loc}. Chi phí minh bạch, tư vấn chi tiết, hỗ trợ nhanh chóng 24/7 cho mọi khách hàng.",
+                f"Dịch vụ {c1} trọn gói giá tốt tại {c_brand}. Đảm bảo chất lượng chuyên môn cao, tiến độ chuẩn xác, hợp đồng rõ ràng và bảo hành chu đáo tại {loc}."
+            ]
+            min_len, max_len, is_sen = 120, 155, True
+        else:
+            opts = [
+                f"{c_brand} - Hệ Thống Dịch Vụ {c1} Chuyên Nghiệp Chuẩn Uy Tín",
+                f"{c_brand} - Dịch Vụ {pair} Trọn Gói Uy Tín Tại {loc}",
+                f"{c_brand} - Trung Tâm Tư Vấn & Triển Khai {c1} Hàng Đầu"
+            ]
+            min_len, max_len, is_sen = 20, 80, False
+    else:  # commerce_retail (B2C consumer focus)
+        if field_type == "title":
+            opts = [
+                f"{c_brand} | {c1} Chính Hãng - Bảo Hành 24T",
+                f"{c_brand} - Phân Phối {c1} Chính Hãng Giá Tốt",
+                f"{c_brand} | {c1} Giá Tốt - Giao Hỏa Tốc 2H",
+                f"{c_brand} - Chuyên {c1} Hàng Mới 100% {loc}",
+                f"{c_brand} | Mua {c1} Trả Góp 0% Lãi Suất",
+                f"{c_brand} - Đại Lý {c1} Uy Tín Tại {loc}",
+                f"{c_brand} | {c1} Bán Chạy, Miễn Phí Lắp Đặt",
+                f"{c_brand} - Phân Phối {pair} Chính Hãng",
+                f"{c_brand} | {c1} Hàng Chuẩn, Lỗi 1 Đổi 1 30 Ngày",
+                f"{c_brand} - Cung Cấp {c1} Đầy Đủ Hóa Đơn VAT",
+                f"{c_brand} | {c1} Giá Ưu Đãi, Đồng Kiểm Khi Nhận",
+                f"{c_brand} - Bảng Giá {c1} Mới Nhất Tại {loc}",
+                f"{c_brand} | {pair} Giá Tốt Nhất Hôm Nay",
+                f"{c_brand} - Sắm {c1} Nhận Quà Tặng Hấp Dẫn",
+                f"{c_brand} | Hệ Thống Bán Lẻ {c1} Hàng Đầu",
+                f"{c_brand} - Mua {c1} Online Tiết Kiệm Tại Kho",
+                f"{c_brand} | Siêu Thị {c1} Cam Kết Giá Rẻ Nhất",
+                f"{c_brand} - Đại Lý Ủy Quyền {c1} Chính Hãng"
+            ]
+            min_len, max_len, is_sen = 40, 65, False
+        elif field_type == "meta_description":
+            opts = [
+                f"{c_brand} cung cấp {pair} chính hãng 100%. Cam kết giá tốt, bảo hành 24T, lỗi 1 đổi 1 trong 30 ngày, miễn phí giao hàng tại {loc}.",
+                f"Mua {c1} chính hãng uy tín tại {loc} bởi {c_brand}. Hàng mới nguyên seal, hỗ trợ trả góp 0%, giao hỏa tốc 2 giờ và lắp đặt tận nhà chu đáo.",
+                f"Hệ thống phân phối {pair} chính hãng tại {loc}. Giá ưu đãi tốt nhất, bảo hành chính hãng toàn quốc, kiểm tra hàng trước khi thanh toán.",
+                f"Đại lý ủy quyền {c1} chính hãng tại {loc} bởi {c_brand}. Đầy đủ hóa đơn VAT, hỗ trợ kỹ thuật 24/7, cam kết chất lượng chuẩn mực dài lâu.",
+                f"Bảng giá {c1} mới nhất tại {c_brand}. Cam kết hàng chuẩn 100%, bảo hành 24 tháng tận nơi, giao hàng hỏa tốc trong ngày tại khu vực {loc}.",
+                f"Địa chỉ mua {c1} chính hãng giá ưu đãi tại {loc}. Đổi mới 30 ngày nếu phát sinh lỗi, bảo hành toàn diện, hỗ trợ tư vấn 24/7 tại {c_brand}."
+            ]
+            min_len, max_len, is_sen = 120, 155, True
+        else:  # h1
+            opts = [
+                f"{c_brand} - Hệ Thống Bán Lẻ {c1} Chính Hãng Bảo Hành 24 Tháng",
+                f"{c_brand} - Đại Lý Phân Phối {pair} Uy Tín Tại {loc}",
+                f"{c_brand} - Trung Tâm Cung Cấp {c1} Chính Hãng Giá Tốt Nhất",
+                f"{c_brand} - Siêu Thị Phân Phối {c1} Chính Hãng Hàng Đầu",
+                f"{c_brand} - Hệ Thống Bán Lẻ {pair} Trả Góp 0% Uy Tín"
+            ]
+            min_len, max_len, is_sen = 20, 80, False
 
     seen = set(x.strip().lower() for x in (existing or []) if x)
     if cur_val:
         seen.add(cur_val.strip().lower())
 
-    # Lọc ra những câu chưa từng xuất hiện và đạt chuẩn độ dài
+    # Lọc ra những câu chưa từng xuất hiện và đạt chuẩn độ dài không cụt chữ
     valid_candidates = []
     for opt in opts:
         cl = _clean_and_clamp_seo(opt, min_len, max_len, is_sen)
@@ -148,14 +219,6 @@ def portal_generate_onpage_ai_suggest(project_id: str, payload: OnpageAiSuggestR
     brand = payload.brand_name or project.get("brand_name") or project.get("name") or "Thương Hiệu"
     loc = payload.target_location or project.get("target_location") or "Toàn quốc"
     cats = payload.core_categories or []
-
-    # Khung giới hạn độ dài
-    if payload.field_type == "title":
-        min_len, max_len, is_sen = 40, 65, False
-    elif payload.field_type == "meta_description":
-        min_len, max_len, is_sen = 120, 155, True
-    else:
-        min_len, max_len, is_sen = 20, 80, False
 
     # Kích hoạt bộ tổng hợp sáng tạo AI tức thì (Instant Creative AI Synthesizer)
     suggestion = _generate_fallback_variant(

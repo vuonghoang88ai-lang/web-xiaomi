@@ -60,18 +60,21 @@ function resolveBrandEntity(p, bp, audit) {
 function clampSeoText(s, min, max, pad, isSentence) {
   s = (s || '').replace(/\s+/g, ' ').trim();
   if (s.length > max) {
-    s = s.slice(0, max - 1);
+    s = s.slice(0, max);
     const sp = s.lastIndexOf(' ');
-    if (sp > min - 10) s = s.slice(0, sp);
-    s = s.replace(/[,;:\-\s|]+$/, '');
+    if (sp >= min - 5) s = s.slice(0, sp);
+    while (true) {
+      let prev = s;
+      s = s.replace(/[\s,;:\-|/]+$/, '');
+      s = s.replace(/\s+(?:tại|và|cho|của|ở|là|với|khi|trong|được|bởi|nhất|mới|&|đến|từ|về|giá)\s*$/i, '');
+      s = s.replace(/[\s,;:\-|/]+$/, '');
+      if (s === prev || s.length < min) break;
+    }
     if (isSentence && !/[.!?]$/.test(s)) s += '.';
   }
   if (s.length < min && pad) {
-    s = (s + ' ' + pad).trim();
-    if (s.length > max) {
-      s = s.slice(0, max - 1).replace(/\s+\S*$/, '').replace(/[,;:\-\s|]+$/, '');
-      if (isSentence && !/[.!?]$/.test(s)) s += '.';
-    }
+    const candidate = `${s} - ${pad}`.trim();
+    if (candidate.length <= max) s = candidate;
   }
   return s;
 }
@@ -111,25 +114,24 @@ function buildDiverseVariants(brand, cats, loc, archetype, isXiaomi) {
     rawH1s = [`${brand} - Hệ Thống Dịch Vụ ${c1} Chuyên Nghiệp Chuẩn Uy Tín`, `${brand} - Dịch Vụ ${pair} Trọn Gói Uy Tín Tại ${loc}`];
   } else {
     rawTitles = [
-      `${brand} - Tổng Kho Phân Phối ${c1} Giá Tận Gốc`, `${brand} | ${c1} Chính Hãng, Bảo Hành 24 Tháng Tại ${loc}`,
-      `${brand} - Đại Lý Phân Phối ${c1} Giá Rẻ Tại Kho`, `${brand} | ${pair} Chính Hãng, Trả Góp 0%`,
-      `${brand} - Chuyên ${c1} Chính Hãng Uy Tín Tại ${loc}`, `${brand} | Bảng Giá ${c1} Mới Nhất, Giao 2H ${loc}`,
-      `${brand} - Tổng Kho ${pair} Giá Sỉ Chiết Khấu Cao`, `${brand} | Mua ${c1} Giá Gốc, Lỗi 1 Đổi 1 30 Ngày`,
-      `${brand} - Phân Phối ${c1} Hàng Mới Nguyên Seal 100%`, `${brand} | Đại Lý ${c1} Chính Hãng, Hóa Đơn VAT Đầy Đủ`,
-      `${brand} - Tổng Kho Điện Máy ${c1} Miễn Phí Lắp Đặt`, `${brand} | ${c1} Giá Rẻ Hơn Đối Thủ, Giao Nhanh ${loc}`
+      `${brand} | ${c1} Chính Hãng - Bảo Hành 24T`, `${brand} - Phân Phối ${c1} Chính Hãng Giá Tốt`,
+      `${brand} | ${c1} Giá Tốt - Giao Hỏa Tốc 2H`, `${brand} - Chuyên ${c1} Hàng Mới 100% ${loc}`,
+      `${brand} | Mua ${c1} Trả Góp 0% Lãi Suất`, `${brand} - Đại Lý ${c1} Uy Tín Tại ${loc}`,
+      `${brand} | ${c1} Bán Chạy, Miễn Phí Lắp Đặt`, `${brand} - Phân Phối ${pair} Chính Hãng`,
+      `${brand} | ${c1} Hàng Chuẩn, Lỗi 1 Đổi 1 30 Ngày`, `${brand} - Cung Cấp ${c1} Đầy Đủ Hóa Đơn VAT`,
+      `${brand} | ${c1} Giá Ưu Đãi, Đồng Kiểm Khi Nhận`, `${brand} - Bảng Giá ${c1} Mới Nhất Tại ${loc}`
     ];
     rawDescs = [
-      `${brand} - Tổng kho phân phối ${pair} chính hãng. Cam kết giá rẻ hơn đối thủ, bảo hành 24 tháng, giao hỏa tốc 2h tại ${loc}.`,
-      `Mua ${c1} chính hãng 100% tại ${brand}. Bảo hành 24 tháng chính hãng, lỗi 1 đổi 1 trong 30 ngày, miễn phí vận chuyển tại ${loc}.`,
-      `Đại lý phân phối ${pair} chính hãng tại ${loc}. Hỗ trợ trả góp 0%, giao hàng hỏa tốc trong 2 giờ, kiểm tra hàng trước khi thanh toán.`,
-      `Bảng giá ${c1} mới nhất tại kho ${brand}. Cam kết hàng mới nguyên seal 100%, chiết khấu cao cho đại lý, giao ngay tại ${loc}.`,
-      `${brand} cung cấp ${pair} cam kết giá sỉ tại kho. Đầy đủ hóa đơn VAT, hỗ trợ lắp đặt tận nơi, kiểm tra hàng trước khi nhận.`,
-      `Tổng kho phân phối ${c1} chính hãng giá gốc tại ${loc}. Cam kết hàng mới 100%, bảo hành dài hạn, tư vấn kỹ thuật chuyên sâu 24/7.`,
-      `Mua ${pair} giá sỉ tại tổng kho ${brand}. Miễn phí vận chuyển nội thành ${loc}, hỗ trợ trả góp lãi suất 0%, nhận hàng thanh toán.`
+      `${brand} cung cấp ${pair} chính hãng 100%. Cam kết giá tốt, bảo hành 24T, lỗi 1 đổi 1 trong 30 ngày, miễn phí giao hàng tại ${loc}.`,
+      `Mua ${c1} chính hãng uy tín tại ${loc} bởi ${brand}. Hàng mới nguyên seal, hỗ trợ trả góp 0%, giao hỏa tốc 2 giờ và lắp đặt tận nhà chu đáo.`,
+      `Hệ thống phân phối ${pair} chính hãng tại ${loc}. Giá ưu đãi tốt nhất, bảo hành chính hãng toàn quốc, kiểm tra hàng trước khi thanh toán.`,
+      `Đại lý ủy quyền ${c1} chính hãng tại ${loc} bởi ${brand}. Đầy đủ hóa đơn VAT, hỗ trợ kỹ thuật 24/7, cam kết chất lượng chuẩn mực dài lâu.`,
+      `Bảng giá ${c1} mới nhất tại ${brand}. Cam kết hàng chuẩn 100%, bảo hành 24 tháng tận nơi, giao hàng hỏa tốc trong ngày tại khu vực ${loc}.`
     ];
     rawH1s = [
-      `${brand} - Tổng Kho Phân Phối ${c1} Chính Hãng Tại ${loc}`, `${brand} - Hệ Thống Bán Lẻ ${pair} Giá Sỉ Tại Kho`,
-      `${brand} - Đại Lý Phân Phối ${c1} Chính Hãng Bảo Hành 24 Tháng`, `${brand} - Phân Phối ${c1} Giá Gốc, Hỗ Trợ Trả Góp 0%`
+      `${brand} - Hệ Thống Bán Lẻ ${c1} Chính Hãng Bảo Hành 24 Tháng`,
+      `${brand} - Đại Lý Phân Phối ${pair} Uy Tín Tại ${loc}`,
+      `${brand} - Trung Tâm Cung Cấp ${c1} Chính Hãng Giá Tốt Nhất`
     ];
   }
 

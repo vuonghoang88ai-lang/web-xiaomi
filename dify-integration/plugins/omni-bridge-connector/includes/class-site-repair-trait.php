@@ -37,7 +37,7 @@ trait SiteRepairTrait {
         }
 
         // 2. Lưu cấu hình H1 và Meta riêng của Omni Bridge làm fallback an toàn
-        if (!empty($homepage_h1)) {
+        if (isset($params['homepage_h1'])) {
             update_option('omni_bridge_homepage_h1', $homepage_h1);
             $updated_items[] = 'homepage_h1';
         }
@@ -177,6 +177,7 @@ trait SiteRepairTrait {
      */
     public function render_homepage_semantic_h1() {
         if (!is_front_page() && !is_home()) return;
+        if (defined('OMNI_BRIDGE_H1_RENDERED') && OMNI_BRIDGE_H1_RENDERED) return;
 
         $h1 = get_option('omni_bridge_homepage_h1', '');
         if (!empty($h1)) {
