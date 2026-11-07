@@ -203,6 +203,31 @@ def enrich_query_with_live_grounding(query: str, project_id: str) -> str:
             sources_meta.append(f"- `[2]` Hồ sơ Kho Tri thức Dự án {project.get('name')} (Xác thực thực tế)")
             logger.info(f"[DYNAMIC_CATALOG] Injected for project={project.get('name')}")
 
+    # 4b. SOP 12, 34 & 35: Trinh sát Bài viết Đối thủ Thời gian thực (Live Competitor Article Harvester)
+    content_intent_pattern = (
+        r"\b(?:viết\s+bài|lập\s+dàn\s+ý|dàn\s+ý|bài\s+viết|content|seo|paa|w[1-5]|"
+        r"đánh\s+giá|review|so\s+sánh|hướng\s+dẫn|có\s+tốt\s+không|có\s+bền\s+không|"
+        r"có\s+nên\s+mua|mua\s+loại\s+nào|kinh\s+nghiệm|giải\s+đáp)\b"
+    )
+    if project and re.search(content_intent_pattern, pure_query.lower()):
+        try:
+            from competitor_content_harvester import harvest_top_competitor_articles, build_competitor_grounding_block
+            quote_match = re.search(r"[\"']([^\"']{8,100})[\"']", pure_query)
+            topic_query = quote_match.group(1) if quote_match else pure_query
+            topic_query = re.sub(r"^(?:hãy\s+)?(?:viết\s+bài|lập\s+dàn\s+ý|giải\s+đáp|cho\s+tôi\s+biết|tìm\s+hiểu|phân\s+tích)\s+", "", topic_query, flags=re.IGNORECASE).strip()
+
+            proj_url = project.get("target_website_url", "")
+            brand_name = project.get("name", "Kho Hàng")
+            harvested_arts = harvest_top_competitor_articles(topic_query, project_domain=proj_url, max_competitors=3, total_timeout=5)
+            if harvested_arts:
+                comp_block = build_competitor_grounding_block(harvested_arts, topic_query, brand_name)
+                injections.append(comp_block)
+                for art in harvested_arts:
+                    sources_meta.append(f"- `[SERP]` Bài đối thủ: {art['title']} ({art['domain']})")
+                logger.info(f"[COMPETITOR_HARVEST] Injected {len(harvested_arts)} articles for topic: {topic_query[:40]}")
+        except Exception as ce:
+            logger.warning(f"[COMPETITOR_HARVEST_FAIL] {ce}")
+
     # 5. Minh bạch Trích dẫn Gemini Grounding (SOP 42)
     if sources_meta:
         sources_list = "\n".join(sources_meta)

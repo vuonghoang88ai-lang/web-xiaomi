@@ -74,6 +74,8 @@ def _clean_agent_message(answer: str, raw_thoughts: list):
     clean_ans = re.sub(r"<[｜|]\s*DSML[\s\S]*?(?=\n\n|$)", "", clean_ans)
     clean_ans = re.sub(r"<function_calls?>[\s\S]*?(</function_calls?>|$)", "", clean_ans)
     clean_ans = re.sub(r"\[\d+\s+items\s+compressed\s+to\s+\d+\.\s+Retrieve\s+more:[^\]]+\]", "", clean_ans).strip()
+    from routes.portal.stylometry_normalizer import sanitize_ai_footprints
+    clean_ans = sanitize_ai_footprints(clean_ans)
 
     thought_parts = []
     for s in thought_steps:

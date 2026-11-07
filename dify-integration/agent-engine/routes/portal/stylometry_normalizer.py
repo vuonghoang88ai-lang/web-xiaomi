@@ -97,3 +97,30 @@ def normalize_human_burstiness(text: str) -> Dict[str, any]:
         "anti_ai_badge": "🟢 EEAT HUMAN PASS" if metrics.get("is_human_like") else "🟡 NHỊP ĐIỆU CẦN TỐI ƯU"
     }
 
+
+def sanitize_ai_footprints(text: str) -> str:
+    """
+    SOP 12 & 45: Khử trùng triệt để các dấu vết AI, tiêu đề rập khuôn,
+    lạm phát emoji và rò rỉ thuật ngữ kỹ thuật nội bộ (E-E-A-T, Schema, Anti-Persona).
+    """
+    if not text:
+        return text
+
+    t = text
+    # 1. Khử tiêu đề boilerplate đầu bài
+    t = re.sub(r"^#\s*👑\s*BÀI VIẾT HOÀN CHỈNH[^\n]*\n+", "", t, flags=re.I).strip()
+
+    # 2. Khử emoji máy móc ở đầu các thẻ H1, H2, H3, H4
+    t = re.sub(r"(?m)^(#{1,4}\s*)[🔍📊🛡️🔧⚠️🛠️🌟📞❓🎯💡👑✨🚀📌💎🏆🔥]\s*", r"\1", t)
+
+    # 3. Khử rò rỉ thuật ngữ kỹ thuật nội bộ
+    t = re.sub(r"\s*\(Expertise,\s*Experience,\s*Authoritativeness,\s*Trustworthiness\)", "", t, flags=re.I)
+    t = re.sub(r"\s*\(People Also Ask\)", "", t, flags=re.I)
+    t = re.sub(r"\s*\(FAQ Schema\)", "", t, flags=re.I)
+    t = re.sub(r"Anti-Persona:\s*", "", t, flags=re.I)
+
+    # 4. Thanh lọc các cụm từ sáo rỗng AI
+    t, _ = purge_ai_cliches(t)
+    return t
+
+

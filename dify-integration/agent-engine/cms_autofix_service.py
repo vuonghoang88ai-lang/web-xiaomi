@@ -42,9 +42,7 @@ def execute_project_onpage_autofix(project_id: str, custom_seo: Optional[dict] =
 
     # Tự động khắc phục kết nối fallback nếu chưa cấu hình riêng (SOP 47 & 48)
     if not cms_url and project.get("target_website_url"):
-        target_site = project.get("target_website_url", "").rstrip('/')
-        if any(h in target_site for h in ["100.", "127.0.0.1", "localhost", "wordpress"]):
-            cms_url = target_site
+        cms_url = project.get("target_website_url", "").rstrip('/')
     if not api_key and os.getenv("OMNI_BRIDGE_KEY"):
         api_key = os.getenv("OMNI_BRIDGE_KEY", "").strip()
 
@@ -52,6 +50,19 @@ def execute_project_onpage_autofix(project_id: str, custom_seo: Optional[dict] =
         cms_url = cms_url.replace("127.0.0.1:8080", "wordpress:80").replace("localhost:8080", "wordpress:80")
     if not cms_url or not api_key:
         raise HTTPException(status_code=400, detail="Website chưa kết nối Omni Bridge Connector. Vui lòng kiểm tra lại kết nối.")
+
+    # Tự động đồng bộ ngược cấu hình kết nối chuẩn vào CSDL nếu trước đó chưa lưu
+    if cms_url and api_key and (not project.get("cms_api_url") or not (auth_config.get("api_key") if isinstance(auth_config, dict) else None)):
+        try:
+            with db_service.get_connection() as c_conn:
+                with c_conn.cursor() as c_cur:
+                    c_cur.execute(
+                        "UPDATE projects SET cms_type = 'wordpress', cms_api_url = %s, cms_auth_config = %s WHERE id = %s;",
+                        (cms_url, json.dumps({"api_key": api_key}), project_id)
+                    )
+                    c_conn.commit()
+        except Exception as e_cfg:
+            logger.warning(f"Lỗi tự động lưu kết nối CMS: {e_cfg}")
 
     brand_name = project.get("name") or "Website"
     target_loc = project.get("target_location") or "Hà Nội, Việt Nam"
@@ -87,34 +98,40 @@ def execute_project_onpage_autofix(project_id: str, custom_seo: Optional[dict] =
         seo_h1 = f"{clean_brand} - Hệ Thống Dịch Vụ {serv_str} Chuẩn Uy Tín"
         tagline = "Chất lượng chuyên môn chuẩn mực & uy tín dài lâu"
     else:
-        is_xiaomi = any("xiaomi" in str(x).lower() for x in [biz_desc, clean_brand, target_url] + clean_cats)
-        prod_str = top_cats_str or ("Tivi, Tủ Lạnh, Robot Hút Bụi Xiaomi" if is_xiaomi else "Sản Phẩm & Thiết Bị")
-        seo_title = f"{clean_brand} - Tổng Kho Phân Phối Xiaomi Chính Hãng Giá Sỉ" if is_xiaomi else f"{clean_brand} - Tổng Kho Phân Phối {clean_cats[0] if clean_cats else 'Chính Hãng'} Giá Sỉ"
-        seo_desc = f"{clean_brand} - Tổng kho phân phối {prod_str} chính hãng 100%. Cam kết giá rẻ hơn đối thủ, bảo hành 24 tháng, giao hỏa tốc 2h tại {target_loc}." if is_xiaomi else f"{clean_brand} - Tổng kho phân phối {prod_str} chính hãng 100%. Cam kết giá sỉ tại kho, bảo hành chính hãng uy tín tại {target_loc}."
-        seo_h1 = f"{clean_brand} - Tổng Kho Phân Phối Sản Phẩm Xiaomi Chính Hãng" if is_xiaomi else f"{clean_brand} - Tổng Kho Phân Phối Chính Hãng"
-        tagline = "Hệ thống phân phối chính hãng & dịch vụ uy tín"
+        cat_anchor = clean_cats[0] if clean_cats else (clean_brand or "Chính Hãng")
+        prod_str = top_cats_str or f"Sản Phẩm & Thiết Bị {cat_anchor}"
+        seo_title = f"{clean_brand} - Tổng Kho Phân Phối {cat_anchor} Giá Sỉ"
+        seo_desc = f"{clean_brand} - Tổng kho phân phối {prod_str} chính hãng 100%. Cam kết giá sỉ tại kho, bảo hành chính hãng uy tín tại {target_loc}."
+        seo_h1 = f"{clean_brand} - Tổng Kho Phân Phối {cat_anchor} Chính Hãng"
+        tagline = f"Hệ thống phân phối {cat_anchor} chính hãng & dịch vụ uy tín"
 
     bp_data = project.get("brand_profile") or {}
     bp_data = json.loads(bp_data) if isinstance(bp_data, str) else bp_data
 
     # Áp dụng cơ chế Khóa Bảo Toàn Title & Meta (Locking Mechanism)
+    is_custom_title, is_custom_desc = False, False
     if custom_seo and isinstance(custom_seo, dict):
-        if custom_seo.get("homepage_title"):
-            seo_title = custom_seo["homepage_title"].strip()
+        new_title = (custom_seo.get("homepage_title") or custom_seo.get("title") or custom_seo.get("meta_title") or "").strip()
+        if new_title:
+            seo_title = new_title
             bp_data["locked_title"] = seo_title
             bp_data["title_locked"] = True
+            is_custom_title = True
         elif bp_data.get("title_locked") and bp_data.get("locked_title"):
             seo_title = bp_data["locked_title"]
 
-        if custom_seo.get("homepage_description"):
-            seo_desc = custom_seo["homepage_description"].strip()
+        new_desc = (custom_seo.get("homepage_description") or custom_seo.get("meta_description") or custom_seo.get("description") or "").strip()
+        if new_desc:
+            seo_desc = new_desc
             bp_data["locked_meta_description"] = seo_desc
             bp_data["meta_description_locked"] = True
+            is_custom_desc = True
         elif bp_data.get("meta_description_locked") and bp_data.get("locked_meta_description"):
             seo_desc = bp_data["locked_meta_description"]
 
-        if custom_seo.get("homepage_h1"):
-            seo_h1 = custom_seo["homepage_h1"].strip()
+        new_h1 = (custom_seo.get("homepage_h1") or custom_seo.get("h1") or "").strip()
+        if new_h1:
+            seo_h1 = new_h1
             bp_data["locked_h1"] = seo_h1
             bp_data["h1_locked"] = True
         elif bp_data.get("h1_locked") and bp_data.get("locked_h1"):
@@ -127,10 +144,10 @@ def execute_project_onpage_autofix(project_id: str, custom_seo: Optional[dict] =
         if bp_data.get("h1_locked") and bp_data.get("locked_h1"):
             seo_h1 = bp_data["locked_h1"]
 
-    # Chuẩn hóa độ dài SEO Meta Description tuyệt đối (120 - 155 ký tự)
-    if len(seo_desc) > 155:
+    # Chuẩn hóa độ dài SEO Meta Description tuyệt đối (120 - 155 ký tự) nếu không phải do người dùng nhập
+    if not is_custom_desc and len(seo_desc) > 155:
         seo_desc = seo_desc[:152].rsplit(' ', 1)[0].rstrip('.,;') + '.'
-    if len(seo_title) > 65:
+    if not is_custom_title and len(seo_title) > 65:
         seo_title = seo_title[:62].rsplit(' ', 1)[0].rstrip('.,;') + '...'
 
     # Thuật toán hòa giải H1 (Zero Duplicate H1 Reconciliation):

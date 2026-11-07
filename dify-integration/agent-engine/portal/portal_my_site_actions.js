@@ -178,7 +178,7 @@ window.quickSyncSiloCategories = quickSyncSiloCategories;
 
 function viewLegalPagesModal() {
   const p = state.activeProject;
-  const targetUrl = (p && p.target_website_url ? p.target_website_url.replace(/\/$/, '') : 'https://www.truyen360.top');
+  const targetUrl = (p && p.target_website_url ? p.target_website_url.replace(/\/$/, '') : window.location.origin);
   const pages = [
     { title: 'Giới Thiệu Nền Tảng', slug: '/gioi-thieu/' }, { title: 'Điều Khoản Dịch Vụ', slug: '/dieu-khoan/' },
     { title: 'Chính Sách Bảo Mật', slug: '/chinh-sach-bao-mat/' }, { title: 'Bản Quyền & DMCA', slug: '/ban-quyen-dmca/' },

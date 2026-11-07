@@ -104,4 +104,24 @@ trait SeoTrait {
         return array('provider' => $provider, 'synced' => true);
     }
 
+    public function filter_homepage_title($title) {
+        if (is_front_page() || is_home()) {
+            $custom_title = get_option('omni_bridge_homepage_title');
+            if (!empty($custom_title)) {
+                return $custom_title;
+            }
+        }
+        return $title;
+    }
+
+    public function filter_homepage_wp_title($title, $sep = '') {
+        if (is_front_page() || is_home()) {
+            $custom_title = get_option('omni_bridge_homepage_title');
+            if (!empty($custom_title)) {
+                return $custom_title;
+            }
+        }
+        return $title;
+    }
+
 }
