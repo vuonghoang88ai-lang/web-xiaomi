@@ -73,22 +73,25 @@ function openQuickOptimizeModal(type) {
     ? generateOnpageSuggestions(p, bp, audit)
     : { title: '', meta_description: '', h1: '' };
 
-  let title = '', label = '', curVal = '', minLen = 0, maxLen = 0, fieldKey = '', vKey = '';
+  let title = '', label = '', curVal = '', minLen = 0, maxLen = 0, fieldKey = '', vKey = '', isLocked = false;
   if (type === 'title') {
     title = '⚡ Tối Ưu Thẻ Meta Title Tại Chỗ';
     label = 'Tiêu đề trang chủ (Chuẩn SEO: 40 - 65 ký tự)';
-    curVal = (audit.title || '').trim();
+    curVal = (bp.locked_title || audit.title || '').trim();
+    isLocked = Boolean(bp.title_locked && bp.locked_title);
     minLen = 40; maxLen = 65; fieldKey = 'homepage_title'; vKey = 'title_variants';
   } else if (type === 'meta_description') {
     title = '⚡ Tối Ưu Thẻ Meta Description Tại Chỗ';
     label = 'Mô tả tóm tắt trang chủ (Chuẩn SEO: 120 - 155 ký tự)';
-    curVal = (audit.meta_description || '').trim();
+    curVal = (bp.locked_meta_description || audit.meta_description || '').trim();
+    isLocked = Boolean(bp.meta_description_locked && bp.locked_meta_description);
     minLen = 120; maxLen = 155; fieldKey = 'homepage_description'; vKey = 'meta_description_variants';
   } else if (type === 'h1') {
     title = '⚡ Chuẩn Hóa 1 Thẻ H1 Duy Nhất Chứa Định Vị UVP';
     label = 'Nội dung thẻ H1 độc quyền đại diện cho toàn trang web';
     const h1Arr = Array.isArray(audit.h1) ? audit.h1 : (audit.h1 ? [audit.h1] : []);
-    curVal = h1Arr[0] || (audit.title || '').trim();
+    curVal = (bp.locked_h1 || h1Arr[0] || audit.title || '').trim();
+    isLocked = Boolean(bp.h1_locked && bp.locked_h1);
     minLen = 20; maxLen = 80; fieldKey = 'homepage_h1'; vKey = 'h1_variants';
   }
 
@@ -100,7 +103,7 @@ function openQuickOptimizeModal(type) {
   window._currentModalCats = suggs.categories;
   window._currentModalArchetype = suggs.archetype;
   const isCurValid = curVal && (minLen === 0 || (curVal.length >= minLen && curVal.length <= maxLen));
-  const initialVal = isCurValid ? curVal : variants[0];
+  const initialVal = isCurValid ? curVal : (variants[0] || curVal);
 
   let modal = document.getElementById('onpageQuickModal');
   if (!modal) {
@@ -113,10 +116,11 @@ function openQuickOptimizeModal(type) {
   modal.innerHTML = `
     <div style="background:var(--bg-card,#1e293b);border:1px solid var(--border-subtle,rgba(255,255,255,0.1));border-radius:12px;width:100%;max-width:540px;padding:22px;box-shadow:0 20px 40px rgba(0,0,0,0.5);color:#f8fafc;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <h3 style="font-size:15px;font-weight:600;margin:0;color:#f8fafc;display:flex;align-items:center;gap:8px;">${title}</h3>
+        <h3 style="font-size:15px;font-weight:600;margin:0;color:#f8fafc;display:flex;align-items:center;gap:8px;">${title} ${isLocked ? '<span style="font-size:10px;color:#34d399;background:rgba(16,185,129,0.15);padding:1px 6px;border-radius:4px;border:1px solid rgba(16,185,129,0.3);">🔒 Đã Khóa (Web)</span>' : ''}</h3>
         <button type="button" onclick="closeQuickOptimizeModal()" style="background:transparent;border:none;color:#94a3b8;font-size:18px;cursor:pointer;">✕</button>
       </div>
       <div style="font-size:12px;color:var(--text-muted,#94a3b8);margin-bottom:12px;">${label}</div>
+      ${isLocked ? `<div style="font-size:11px;color:#34d399;margin-bottom:8px;background:rgba(16,185,129,0.08);padding:5px 8px;border-radius:4px;border:1px solid rgba(16,185,129,0.2);">🔒 Nội dung này đang được khóa bảo toàn trên web. Bấm "Lưu Lên Web" để đổi khóa mới.</div>` : ''}
       ${type === 'meta_description' 
         ? `<textarea id="quickOptInput" rows="3" style="width:100%;background:rgba(15,23,42,0.8);border:1px solid var(--border-subtle,rgba(255,255,255,0.15));border-radius:6px;padding:10px;color:#fff;font-size:13px;line-height:1.5;resize:vertical;">${escapeHtml(initialVal)}</textarea>`
         : `<input type="text" id="quickOptInput" value="${escapeHtml(initialVal)}" style="width:100%;background:rgba(15,23,42,0.8);border:1px solid var(--border-subtle,rgba(255,255,255,0.15));border-radius:6px;padding:10px;color:#fff;font-size:13px;">`

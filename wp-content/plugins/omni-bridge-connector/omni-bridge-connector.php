@@ -69,6 +69,11 @@ class Omni_Bridge_Connector {
         add_action('wp_head', array($this, 'render_homepage_seo_head'), 1);
         add_action('wp_footer', array($this, 'render_homepage_semantic_h1'), 99);
         add_action('wp_footer', array($this, 'render_eeat_footer_trust_links'), 100);
+        add_filter('pre_get_document_title', array($this, 'filter_homepage_document_title'), 999);
+        add_filter('rank_math/frontend/title', array($this, 'filter_homepage_document_title'), 999);
+        add_filter('wpseo_title', array($this, 'filter_homepage_document_title'), 999);
+        add_filter('rank_math/frontend/description', array($this, 'filter_homepage_meta_description'), 999);
+        add_filter('wpseo_metadesc', array($this, 'filter_homepage_meta_description'), 999);
 
         // Hooks tương thích Theme Phổ quát (Universal Theme Compatibility)
         add_filter('woocommerce_product_tabs', array($this, 'register_universal_specs_tab'), 25);

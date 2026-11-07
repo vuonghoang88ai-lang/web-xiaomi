@@ -104,4 +104,30 @@ trait SeoTrait {
         return array('provider' => $provider, 'synced' => true);
     }
 
+    /**
+     * Khóa bảo toàn Title Trang Chủ chuẩn xác theo lựa chọn từ Portal
+     */
+    public function filter_homepage_document_title($title) {
+        if (is_front_page() || is_home()) {
+            $custom_title = get_option('omni_bridge_homepage_title', '');
+            if (!empty($custom_title)) {
+                return $custom_title;
+            }
+        }
+        return $title;
+    }
+
+    /**
+     * Khóa bảo toàn Meta Description Trang Chủ chuẩn xác theo lựa chọn từ Portal
+     */
+    public function filter_homepage_meta_description($desc) {
+        if (is_front_page() || is_home()) {
+            $custom_desc = get_option('omni_bridge_homepage_desc', '');
+            if (!empty($custom_desc)) {
+                return $custom_desc;
+            }
+        }
+        return $desc;
+    }
+
 }

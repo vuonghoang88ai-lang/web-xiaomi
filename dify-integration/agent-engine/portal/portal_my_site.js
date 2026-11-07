@@ -39,10 +39,14 @@ function renderMySiteTab(mySiteAudit, project, seedAnalysis) {
       return;
     }
 
+    let bp = project.brand_profile || {};
+    if (typeof bp === 'string') { try { bp = JSON.parse(bp); } catch(e) { bp = {}; } }
     const isOnline = audit.status === 'online' || (audit.http_status && audit.http_status >= 200 && audit.http_status < 400);
     const httpCode = audit.http_status || (isOnline ? 200 : 'N/A');
-    const title = (audit.title || '').trim();
-    const metaDesc = (audit.meta_description || '').trim();
+    const isTitleLocked = Boolean(bp.title_locked && bp.locked_title);
+    const title = (bp.locked_title || audit.title || '').trim();
+    const isDescLocked = Boolean(bp.meta_description_locked && bp.locked_meta_description);
+    const metaDesc = (bp.locked_meta_description || audit.meta_description || '').trim();
     const h1List = Array.isArray(audit.h1) ? audit.h1 : (audit.h1 ? [audit.h1] : []);
     const h2List = Array.isArray(audit.h2) ? audit.h2 : (audit.h2 ? [audit.h2] : []);
     const navList = Array.isArray(audit.key_services_or_nav) ? audit.key_services_or_nav : [];
@@ -76,8 +80,6 @@ function renderMySiteTab(mySiteAudit, project, seedAnalysis) {
     }
 
     // Đối chiếu cấu trúc Danh mục Menu của Đối thủ
-    let bp = project.brand_profile || {};
-    if (typeof bp === 'string') { try { bp = JSON.parse(bp); } catch(e) { bp = {}; } }
     let rawSeedCats = (seedAnalysis && (seedAnalysis.categories || seedAnalysis.category_structure)) || (bp.seed_analysis && (bp.seed_analysis.categories || bp.seed_analysis.category_structure)) || [];
     if (!rawSeedCats.length && Array.isArray(state.competitors) && state.competitors.length) {
       const cSet = new Set();
@@ -134,7 +136,10 @@ function renderMySiteTab(mySiteAudit, project, seedAnalysis) {
         </div>
 
         <div class="card" style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 16px;">
-          <div style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600;">Thẻ Meta Title</div>
+          <div style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
+            <span>Thẻ Meta Title</span>
+            ${isTitleLocked ? '<span style="color: #34d399; font-size: 10px; background: rgba(16, 185, 129, 0.15); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.3);">🔒 Đã Khóa (Web)</span>' : ''}
+          </div>
           <div style="font-size: 13px; font-weight: 600; color: #fff; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(title || 'Chưa có')}">
             ${escapeHtml(title || 'Chưa có thẻ Title')}
           </div>
@@ -147,7 +152,10 @@ function renderMySiteTab(mySiteAudit, project, seedAnalysis) {
         </div>
 
         <div class="card" style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 16px;">
-          <div style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600;">Thẻ Meta Description</div>
+          <div style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
+            <span>Thẻ Meta Description</span>
+            ${isDescLocked ? '<span style="color: #34d399; font-size: 10px; background: rgba(16, 185, 129, 0.15); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.3);">🔒 Đã Khóa (Web)</span>' : ''}
+          </div>
           <div style="font-size: 12px; color: #cbd5e1; margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;" title="${escapeHtml(metaDesc || 'Chưa có')}">
             ${escapeHtml(metaDesc || '⚠️ Website chưa có thẻ Meta Description!')}
           </div>

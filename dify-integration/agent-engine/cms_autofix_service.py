@@ -94,13 +94,38 @@ def execute_project_onpage_autofix(project_id: str, custom_seo: Optional[dict] =
         seo_h1 = f"{clean_brand} - Tổng Kho Phân Phối Sản Phẩm Xiaomi Chính Hãng" if is_xiaomi else f"{clean_brand} - Tổng Kho Phân Phối Chính Hãng"
         tagline = "Hệ thống phân phối chính hãng & dịch vụ uy tín"
 
+    bp_data = project.get("brand_profile") or {}
+    bp_data = json.loads(bp_data) if isinstance(bp_data, str) else bp_data
+
+    # Áp dụng cơ chế Khóa Bảo Toàn Title & Meta (Locking Mechanism)
     if custom_seo and isinstance(custom_seo, dict):
         if custom_seo.get("homepage_title"):
             seo_title = custom_seo["homepage_title"].strip()
+            bp_data["locked_title"] = seo_title
+            bp_data["title_locked"] = True
+        elif bp_data.get("title_locked") and bp_data.get("locked_title"):
+            seo_title = bp_data["locked_title"]
+
         if custom_seo.get("homepage_description"):
             seo_desc = custom_seo["homepage_description"].strip()
+            bp_data["locked_meta_description"] = seo_desc
+            bp_data["meta_description_locked"] = True
+        elif bp_data.get("meta_description_locked") and bp_data.get("locked_meta_description"):
+            seo_desc = bp_data["locked_meta_description"]
+
         if custom_seo.get("homepage_h1"):
             seo_h1 = custom_seo["homepage_h1"].strip()
+            bp_data["locked_h1"] = seo_h1
+            bp_data["h1_locked"] = True
+        elif bp_data.get("h1_locked") and bp_data.get("locked_h1"):
+            seo_h1 = bp_data["locked_h1"]
+    else:
+        if bp_data.get("title_locked") and bp_data.get("locked_title"):
+            seo_title = bp_data["locked_title"]
+        if bp_data.get("meta_description_locked") and bp_data.get("locked_meta_description"):
+            seo_desc = bp_data["locked_meta_description"]
+        if bp_data.get("h1_locked") and bp_data.get("locked_h1"):
+            seo_h1 = bp_data["locked_h1"]
 
     # Chuẩn hóa độ dài SEO Meta Description tuyệt đối (120 - 155 ký tự)
     if len(seo_desc) > 155:
@@ -109,9 +134,6 @@ def execute_project_onpage_autofix(project_id: str, custom_seo: Optional[dict] =
         seo_title = seo_title[:62].rsplit(' ', 1)[0].rstrip('.,;') + '...'
 
     # Thuật toán hòa giải H1 (Zero Duplicate H1 Reconciliation):
-    # Nếu theme đã có thẻ H1, cập nhật tagline và KHÔNG chèn thêm H1 ở footer để tránh trùng lặp.
-    bp_data = project.get("brand_profile") or {}
-    bp_data = json.loads(bp_data) if isinstance(bp_data, str) else bp_data
     existing_h1s = (bp_data.get("my_site_audit") or {}).get("h1") or []
     clean_h1 = seo_h1.replace(clean_brand, '').strip(' -:|') if clean_brand in seo_h1 else seo_h1
     if clean_h1:
@@ -192,23 +214,29 @@ def execute_project_onpage_autofix(project_id: str, custom_seo: Optional[dict] =
             "results": results
         }
 
-    # 3. Quét lại On-Page web đích (vượt cache LiteSpeed)
+    # 3. Quét lại On-Page web đích (vượt cache LiteSpeed) và khóa bảo toàn dữ liệu
+    my_site_data = bp_data.get("my_site_audit") or {}
     if target_url:
         try:
             nocache_url = f"{target_url}{'&' if '?' in target_url else '?'}_nocache={int(time.time())}"
-            my_site_data = inspect_website(nocache_url, timeout=8)
-            bp = project.get("brand_profile") or {}
-            bp = json.loads(bp) if isinstance(bp, str) else bp
-            bp["my_site_audit"] = my_site_data
-            bp["eeat_locked"] = bp_data.get("eeat_locked", True)
-            if "eeat_audit" in bp_data:
-                bp["eeat_audit"] = bp_data["eeat_audit"]
-            with db_service.get_connection() as conn:
-                with conn.cursor() as cur:
-                    cur.execute("UPDATE projects SET brand_profile = %s WHERE id = %s;", [json.dumps(bp, ensure_ascii=False), project_id])
-                    conn.commit()
+            scraped = inspect_website(nocache_url, timeout=8)
+            if isinstance(scraped, dict) and scraped.get("status") != "error":
+                my_site_data = scraped
         except Exception as e:
             logger.warning(f"Lỗi quét lại onpage sau autofix: {e}")
+
+    # Bảo toàn các trường SEO đã khóa (Immutability Guarantee)
+    if bp_data.get("title_locked") and bp_data.get("locked_title"):
+        my_site_data["title"] = bp_data["locked_title"]
+    if bp_data.get("meta_description_locked") and bp_data.get("locked_meta_description"):
+        my_site_data["meta_description"] = bp_data["locked_meta_description"]
+
+    bp_data["my_site_audit"] = my_site_data
+    bp_data["eeat_locked"] = bp_data.get("eeat_locked", True)
+    with db_service.get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE projects SET brand_profile = %s WHERE id = %s;", [json.dumps(bp_data, ensure_ascii=False), project_id])
+            conn.commit()
 
     arch_labels = {"content_media": "Nội Dung & Giải Trí Trực Tuyến", "service_health_b2b": "Dịch Vụ & Chuyên Môn Y Tế", "commerce_retail": "Thương Mại & Bán Lẻ"}
     lock_status_msg = "đã được khóa bảo toàn (không ghi đè)" if eeat_locked and not force_eeat else "đã được thẩm định chi tiết, khử sạch AI-hóa và khóa bảo toàn"
