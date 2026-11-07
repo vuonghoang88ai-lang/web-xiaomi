@@ -1,0 +1,162 @@
+  <!-- MODAL TẠO DỰ ÁN MỚI -->
+  <div class="modal-overlay" id="newProjectModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Khởi Tạo Dự Án Mới</h3>
+        <button type="button" class="modal-close" id="closeModal">&times;</button>
+      </div>
+      <form id="newProjectForm">
+        <div class="form-group">
+          <label for="projName">Tên Dự án / Thương hiệu *</label>
+          <input type="text" id="projName" class="form-input" placeholder="Ví dụ: Viomi Viet Official" required>
+        </div>
+        <div class="form-group">
+          <label for="projUrl">Website đích *</label>
+          <input type="text" inputmode="url" id="projUrl" class="form-input" placeholder="Ví dụ: viomiviet.vn hoặc http://100.122..." required>
+        </div>
+        <div class="form-group">
+          <label for="projDesc">Mô tả ngành hàng & Sản phẩm cốt lõi</label>
+          <input type="text" id="projDesc" class="form-input" placeholder="Phân phối robot hút bụi và máy lọc nước thông minh">
+        </div>
+        <div class="form-group">
+          <label for="projSeed">Website Đối thủ mẫu (AI tự nhận diện domain không cần nhập https://)</label>
+          <input type="text" inputmode="url" id="projSeed" class="form-input" placeholder="Ví dụ: mihanoi.vn">
+        </div>
+        <div class="form-group">
+          <label for="projLocation">Địa bàn phục vụ / Khu vực thị trường</label>
+          <input type="text" id="projLocation" class="form-input" placeholder="Toàn quốc" value="Toàn quốc">
+        </div>
+
+        <div style="font-size: 12px; color: #3b82f6; background: rgba(59, 130, 246, 0.08); padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; border-left: 3px solid #3b82f6; line-height: 1.5;">
+          ⚡ <strong>Quy trình Tự Động Hóa Toàn Diện (Zero-Click Autonomous Kickoff)</strong>:<br>
+          Ngay khi bấm "Tạo Dự Án", AI sẽ tự động cào sâu Onpage website bạn, bóc tách bộ từ khóa & cấu trúc Silo của đối thủ mẫu, quét 10 đối thủ Google SERP, sinh 4 phương án Định vị UVP và mở màn chiến dịch Marketing ngay trong cửa sổ chat!
+        </div>
+
+        <div id="newProjectLoadingNotice" style="display: none; text-align: center; padding: 10px; margin-bottom: 14px; background: rgba(59, 130, 246, 0.12); border-radius: 8px; color: #2563eb; font-size: 13px; font-weight: 500;">
+          ⏳ Đang trinh sát Onpage, giải mã đối thủ mẫu và quét Google SERP (khoảng 5-8 giây)...
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="btnCancelProject">Hủy</button>
+          <button type="submit" class="btn-primary" id="btnSubmitNewProject">🚀 Tạo Dự Án & Kích Hoạt Chiến Dịch</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL CHỈNH SỬA DỰ ÁN -->
+  <div class="modal-overlay" id="editProjectModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Chỉnh Sửa Dự Án</h3>
+        <button type="button" class="modal-close" id="closeEditModal">&times;</button>
+      </div>
+      <form id="editProjectForm">
+        <div class="form-group">
+          <label for="editProjName">Tên Dự án / Thương hiệu *</label>
+          <input type="text" id="editProjName" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label for="editProjUrl">Website đích *</label>
+          <input type="text" inputmode="url" id="editProjUrl" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label for="editProjDesc">Mô tả ngành hàng & Sản phẩm cốt lõi</label>
+          <input type="text" id="editProjDesc" class="form-input">
+        </div>
+        <div class="form-group">
+          <label for="editProjSeed">Website Đối thủ mẫu</label>
+          <input type="text" inputmode="url" id="editProjSeed" class="form-input" placeholder="Ví dụ: mihanoi.vn">
+        </div>
+        <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
+          <input type="checkbox" id="editProjReanalyze" style="width: 16px; height: 16px; cursor: pointer;">
+          <label for="editProjReanalyze" style="font-size: 12.5px; color: var(--text-muted); cursor: pointer; margin-bottom: 0;">
+            Tự động giải mã lại đối thủ mẫu và quét lại SERP ngay sau khi lưu
+          </label>
+        </div>
+        <div class="modal-actions" style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+          <button type="button" id="btnDeleteFromEditModal" style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; padding: 8px 14px; border: 1px solid rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.1); color: #ef4444; border-radius: var(--radius-sm); cursor: pointer;">
+            🗑️ Xóa Dự Án
+          </button>
+          <div style="display: flex; gap: 10px;">
+            <button type="button" class="btn-secondary" id="btnCancelEditProject">Hủy</button>
+            <button type="submit" class="btn-primary" id="btnSubmitEditProject">Lưu Thay Đổi</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL ĐỘT KÍCH 6 TRỤ CỘT ĐỐI THỦ CHUYÊN SÂU -->
+  <div class="modal-overlay" id="competitorDeepAuditModal" style="z-index: 1000;" onclick="if(event.target===this) closeCompetitorDeepAuditModal()">
+    <div class="modal-card" style="max-width: 960px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header" style="border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 20px;">🔍</span>
+            <h3 style="margin: 0; font-size: 17px;" id="compModalTitle">Đột Kích 6 Trụ Cột</h3>
+          </div>
+          <p id="compModalSubtitle" style="font-size: 12.5px; color: var(--text-muted); margin: 4px 0 0 0;"></p>
+        </div>
+        <button type="button" class="modal-close" onclick="closeCompetitorDeepAuditModal()">&times;</button>
+      </div>
+      <div id="compModalContent"></div>
+      <div class="modal-actions" style="margin-top: 20px; text-align: right;">
+        <button type="button" class="btn-secondary" onclick="closeCompetitorDeepAuditModal()">Đóng Cửa Sổ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLIENT LICENSE & RENEWAL MODAL (READ-ONLY + KEY ACTIVATION) -->
+  <div class="modal-overlay" id="clientLicenseModal" style="z-index: 1000;" onclick="if(event.target===this) closeClientLicenseModal()">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header" style="border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 24px;">🛡️</span>
+          <div>
+            <h3 style="margin: 0; font-size: 16px;">Bản Quyền & Gói Cước Dự Án</h3>
+            <p id="clientModalDomain" style="font-size: 12.5px; color: #60a5fa; margin: 3px 0 0 0; font-weight: 600;">--</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close" onclick="closeClientLicenseModal()">&times;</button>
+      </div>
+
+      <div style="margin-bottom: 16px; background: rgba(15, 23, 42, 0.6); padding: 14px 16px; border-radius: 8px; border: 1px solid var(--border-subtle); line-height: 1.6; font-size: 13px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="color: var(--text-muted);">Gói đang sử dụng:</span>
+          <span id="clientModalPlanBadge" style="font-weight: 700; padding: 2px 8px; border-radius: 4px; font-size: 12px; background: rgba(16, 185, 129, 0.2); color: #34d399;">--</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="color: var(--text-muted);">Thời hạn đến:</span>
+          <span id="clientModalExpires" style="color: #fff; font-weight: 600;">--</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="color: var(--text-muted);">Số ngày còn lại:</span>
+          <strong id="clientModalDaysLeft" style="color: #fde047; font-size: 14px;">-- ngày</strong>
+        </div>
+      </div>
+
+      <!-- Form nhập key gia hạn -->
+      <form onsubmit="event.preventDefault(); activateClientLicenseKey();" style="margin-bottom: 16px; background: rgba(30, 41, 59, 0.5); padding: 14px 16px; border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.3);">
+        <label style="font-size: 12.5px; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 6px;">🔑 Kích Hoạt / Gia Hạn Bằng License Key</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="inputClientLicenseKey" class="form-input" placeholder="OMNI-DOMAIN-..." style="flex: 1; font-size: 12.5px; padding: 8px 12px; background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-subtle); border-radius: 6px; color: #fff;" required>
+          <button type="submit" class="btn-primary" id="btnSubmitClientKey" style="font-size: 12px; padding: 8px 14px; white-space: nowrap;">
+            Kích Hoạt
+          </button>
+        </div>
+        <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Nhập mã bản quyền nhận được sau khi thanh toán để gia hạn ngày sử dụng.</p>
+      </form>
+
+      <!-- Liên hệ nâng cấp -->
+      <div style="background: rgba(16, 185, 129, 0.05); border: 1px dashed rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 12px 14px; font-size: 12px; color: var(--text-muted);">
+        <div style="font-weight: 600; color: #34d399; margin-bottom: 4px;">💬 Nâng cấp hoặc mua thêm ngày bản quyền:</div>
+        <div>Vui lòng liên hệ Hotline / Zalo Quản trị viên để được cấp License Key gia hạn nhanh trong 30 giây.</div>
+      </div>
+
+      <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
+        <button type="button" class="btn-secondary" onclick="closeClientLicenseModal()">Đóng</button>
+      </div>
+    </div>
+  </div>
+

@@ -1,0 +1,467 @@
+version: "1.0"
+name: "W5 QA Publisher - Enhanced with Orchestration"
+description: "W5 QA Publisher workflow với OrchestrationManager integration, state tracking, error handling và fallback chains"
+metadata:
+  created_at: 2024-10-27
+  updated_at: 2024-10-27
+  orchestration_modes: ["crewai", "dify", "router_direct"]
+  state_tracking: true
+  error_handling: true
+  fallback_chains: true
+
+# ==================== ORCHESTRATION CONFIGURATION ====================
+orchestration:
+  mode: "auto"  # auto, crewai, dify, router_direct
+  timeout_llm: 90
+  timeout_publish: 40
+  max_retries: 3
+  fallback_chain: ["crewai", "dify", "router_direct"]
+  
+  # Dify configuration
+  dify:
+    enabled: true
+    api_base: "${DIFY_API_BASE}"
+    workflow_key: "${DIFY_WORKFLOW_KEY}"
+    timeout: 180
+  
+  # CrewAI configuration
+  crewai:
+    enabled: true
+    agent_timeout: 120
+    parallel_tasks: 3
+    agents: ["content_writer", "qa_validator", "social_creator"]
+  
+  # 9Router configuration
+  router_direct:
+    enabled: true
+    api_base: "${ROUTER_URL}"
+    api_key: "${ROUTER_API_KEY}"
+    model: "combo-creater"
+
+# ==================== STATE MANAGEMENT ====================
+state_management:
+  enabled: true
+  backend: "${STATE_BACKEND}"
+  db_url: "${STATE_DB_URL}"
+  
+  state_nodes:
+    - id: "init_state"
+      type: "state.initialize"
+      description: "Initialize execution state"
+      output:
+        project_id: "autopilot_main"
+        execution_id: "{{ uuid() }}"
+        start_time: "{{ now() }}"
+        status: "pending"
+    
+    - id: "track_state"
+      type: "state.update"
+      description: "Track current execution state"
+      depends_on: ["init_state"]
+      inputs:
+        state_id: "{{ init_state.execution_id }}"
+        status: "running"
+        current_step: "{{ current_step }}"
+        progress: "{{ progress }}"
+      output:
+        state_checkpoint: "{{ state_id }}"
+    
+    - id: "save_state"
+      type: "state.save"
+      description: "Save state to backend"
+      depends_on: ["track_state"]
+      inputs:
+        backend: "{{ state_management.backend }}"
+        state_data: "{{ track_state.state_checkpoint }}"
+
+# ==================== ERROR HANDLING & FALLBACK ====================
+error_handling:
+  enabled: true
+  
+  error_nodes:
+    - id: "error_handler"
+      type: "error.handler"
+      description: "Central error handling node"
+      error_types:
+        - "timeout"
+        - "validation_failed"
+        - "api_error"
+        - "network_error"
+      handlers:
+        timeout:
+          max_retries: 3
+          retry_delay: 5
+          fallback_mode: "next"
+        validation_failed:
+          max_retries: 2
+          fallback_mode: "next"
+        api_error:
+          max_retries: 2
+          fallback_mode: "next"
+        network_error:
+          max_retries: 1
+          fallback_mode: "next"
+    
+    - id: "fallback_chain"
+      type: "fallback.chain"
+      description: "Fallback chain executor"
+      depends_on: ["error_handler"]
+      fallback_modes:
+        - mode: "crewai"
+          priority: 1
+          timeout: 120
+        - mode: "dify"
+          priority: 2
+          timeout: 180
+        - mode: "router_direct"
+          priority: 3
+          timeout: 90
+      on_all_failed:
+        action: "fail"
+        save_error: true
+
+# ==================== CONTENT GENERATION WORKFLOW ====================
+workflow:
+  name: "w5_qa_publisher_enhanced"
+  
+  nodes:
+    # ===== Input Node =====
+    - id: "input"
+      type: "input"
+      description: "Accept input parameters"
+      outputs:
+        keyword: string
+        category: string
+        competitor_url: string
+        day: integer
+    
+    # ===== State Initialization =====
+    - id: "init_execution_state"
+      type: "node.state.initialize"
+      depends_on: ["input"]
+      description: "Initialize execution state for tracking"
+      config:
+        project_id: "autopilot_main"
+        day: "{{ input.day }}"
+        keyword: "{{ input.keyword }}"
+        category: "{{ input.category }}"
+        status: "pending"
+      outputs:
+        execution_id: string
+        state_checkpoint: object
+    
+    # ===== Orchestration Execution =====
+    - id: "execute_orchestration"
+      type: "node.orchestration.execute"
+      depends_on: ["init_execution_state"]
+      description: "Execute with automatic mode selection and fallback"
+      config:
+        modes: ["{{ orchestration.mode }}"]
+        keyword: "{{ input.keyword }}"
+        category: "{{ input.category }}"
+        competitor_url: "{{ input.competitor_url }}"
+        timeout: "{{ orchestration.timeout_llm }}"
+      error_handler: "error_handler"
+      outputs:
+        article: string
+        qa_report: string
+        social_campaign: string
+        orchestration_mode: string
+        execution_attempts: integer
+    
+    # ===== Output Standardization =====
+    - id: "standardize_output"
+      type: "node.adapter.unified_output"
+      depends_on: ["execute_orchestration"]
+      description: "Convert output to unified format"
+      config:
+        mode: "{{ execute_orchestration.orchestration_mode }}"
+        include_metadata: true
+      outputs:
+        unified_output: object
+        metadata: object
+    
+    # ===== Output Validation =====
+    - id: "validate_output"
+      type: "node.validation.unified"
+      depends_on: ["standardize_output"]
+      description: "Validate unified output completeness"
+      config:
+        min_article_length: 100
+        min_qa_report_length: 10
+        require_metadata: true
+        require_mode: true
+      on_failure:
+        action: "retry"
+        max_retries: 2
+        fallback_mode: "next"
+      outputs:
+        is_valid: boolean
+        validation_errors: array
+    
+    # ===== State Update =====
+    - id: "update_execution_state"
+      type: "node.state.update"
+      depends_on: ["validate_output"]
+      description: "Update execution state after validation"
+      config:
+        execution_id: "{{ init_execution_state.execution_id }}"
+        status: "{{ validate_output.is_valid ? 'validated' : 'failed' }}"
+        orchestration_mode: "{{ execute_orchestration.orchestration_mode }}"
+        execution_attempts: "{{ execute_orchestration.execution_attempts }}"
+      outputs:
+        state_updated: boolean
+    
+    # ===== WordPress Publishing =====
+    - id: "publish_wordpress"
+      type: "node.wordpress.publish"
+      depends_on: ["update_execution_state"]
+      description: "Publish article to WordPress as draft"
+      config:
+        title: "{{ standardize_output.unified_output.article_title }}"
+        content: "{{ standardize_output.unified_output.article }}"
+        status: "draft"
+        meta:
+          qa_report: "{{ standardize_output.unified_output.qa_report }}"
+          source_orchestration: "{{ execute_orchestration.orchestration_mode }}"
+      error_handler: "error_handler"
+      outputs:
+        post_id: string
+        preview_url: string
+        publish_status: string
+    
+    # ===== Campaign Record Saving =====
+    - id: "save_campaign_record"
+      type: "node.campaign.save"
+      depends_on: ["publish_wordpress"]
+      description: "Save campaign record with all details"
+      config:
+        day: "{{ input.day }}"
+        keyword: "{{ input.keyword }}"
+        category: "{{ input.category }}"
+        article: "{{ standardize_output.unified_output.article }}"
+        qa_report: "{{ standardize_output.unified_output.qa_report }}"
+        social_campaign: "{{ standardize_output.unified_output.social_campaign }}"
+        orchestration_mode: "{{ execute_orchestration.orchestration_mode }}"
+        post_id: "{{ publish_wordpress.post_id }}"
+        preview_url: "{{ publish_wordpress.preview_url }}"
+      outputs:
+        campaign_file: string
+        record_saved: boolean
+    
+    # ===== Final State Save =====
+    - id: "finalize_state"
+      type: "node.state.save"
+      depends_on: ["save_campaign_record"]
+      description: "Finalize and save execution state to backend"
+      config:
+        execution_id: "{{ init_execution_state.execution_id }}"
+        project_id: "autopilot_main"
+        day: "{{ input.day }}"
+        keyword: "{{ input.keyword }}"
+        category: "{{ input.category }}"
+        status: "completed"
+        post_id: "{{ publish_wordpress.post_id }}"
+        preview_url: "{{ publish_wordpress.preview_url }}"
+        orchestration_mode: "{{ execute_orchestration.orchestration_mode }}"
+        execution_time: "{{ execution_time }}"
+      outputs:
+        state_saved: boolean
+        completion_time: string
+    
+    # ===== Output Node =====
+    - id: "output"
+      type: "output"
+      depends_on: ["finalize_state"]
+      description: "Return final results"
+      outputs:
+        success: "{{ finalize_state.state_saved }}"
+        post_id: "{{ publish_wordpress.post_id }}"
+        preview_url: "{{ publish_wordpress.preview_url }}"
+        article: "{{ standardize_output.unified_output.article }}"
+        qa_report: "{{ standardize_output.unified_output.qa_report }}"
+        social_campaign: "{{ standardize_output.unified_output.social_campaign }}"
+        orchestration_mode: "{{ execute_orchestration.orchestration_mode }}"
+        execution_attempts: "{{ execute_orchestration.execution_attempts }}"
+        campaign_file: "{{ save_campaign_record.campaign_file }}"
+
+# ==================== NODE DEFINITIONS ====================
+node_types:
+  
+  # State Management Nodes
+  state.initialize:
+    description: "Initialize execution state"
+    inputs:
+      project_id: string
+      day: integer
+      keyword: string
+      category: string
+      status: string
+    outputs:
+      execution_id: string
+      state_checkpoint: object
+  
+  state.update:
+    description: "Update execution state"
+    inputs:
+      execution_id: string
+      status: string
+      orchestration_mode: string
+      execution_attempts: integer
+    outputs:
+      state_updated: boolean
+  
+  state.save:
+    description: "Save state to backend (file, PostgreSQL, Redis)"
+    inputs:
+      execution_id: string
+      project_id: string
+      day: integer
+      keyword: string
+      category: string
+      status: string
+      post_id: string
+      preview_url: string
+      orchestration_mode: string
+      execution_time: number
+    outputs:
+      state_saved: boolean
+      completion_time: string
+  
+  # Error Handling Nodes
+  error.handler:
+    description: "Central error handling with retry logic"
+    config:
+      error_types: array
+      handlers: object
+  
+  fallback.chain:
+    description: "Execute fallback chain with priority-based mode selection"
+    config:
+      fallback_modes: array
+      on_all_failed: object
+  
+  # Orchestration Nodes
+  orchestration.execute:
+    description: "Execute with automatic mode selection and fallback"
+    inputs:
+      modes: array
+      keyword: string
+      category: string
+      competitor_url: string
+      timeout: integer
+    outputs:
+      article: string
+      qa_report: string
+      social_campaign: string
+      orchestration_mode: string
+      execution_attempts: integer
+  
+  # Adapter Nodes
+  adapter.unified_output:
+    description: "Convert output to unified format"
+    inputs:
+      mode: string
+      include_metadata: boolean
+    outputs:
+      unified_output: object
+      metadata: object
+  
+  # Validation Nodes
+  validation.unified:
+    description: "Validate unified output"
+    config:
+      min_article_length: integer
+      min_qa_report_length: integer
+      require_metadata: boolean
+      require_mode: boolean
+    outputs:
+      is_valid: boolean
+      validation_errors: array
+  
+  # WordPress Nodes
+  wordpress.publish:
+    description: "Publish to WordPress"
+    inputs:
+      title: string
+      content: string
+      status: string
+      meta: object
+    outputs:
+      post_id: string
+      preview_url: string
+      publish_status: string
+  
+  # Campaign Nodes
+  campaign.save:
+    description: "Save campaign record"
+    inputs:
+      day: integer
+      keyword: string
+      category: string
+      article: string
+      qa_report: string
+      social_campaign: string
+      orchestration_mode: string
+      post_id: string
+      preview_url: string
+    outputs:
+      campaign_file: string
+      record_saved: boolean
+
+# ==================== INTEGRATION POINTS ====================
+integrations:
+  orchestration_manager:
+    module: "orchestration_manager"
+    methods:
+      - "execute"
+      - "execute_with_fallback"
+      - "get_status"
+  
+  state_manager:
+    module: "state_manager"
+    methods:
+      - "save_execution"
+      - "get_execution_state"
+      - "get_campaign_history"
+      - "get_stats"
+  
+  output_adapter:
+    module: "output_adapter"
+    methods:
+      - "from_orchestration_result"
+      - "validate_output"
+  
+  retry_handler:
+    module: "retry_handler"
+    methods:
+      - "execute_with_fallback_chain"
+
+# ==================== MONITORING & LOGGING ====================
+monitoring:
+  enabled: true
+  log_level: "INFO"
+  track_metrics:
+    - execution_time
+    - orchestration_mode
+    - success_rate
+    - error_rate
+  
+  metrics_storage:
+    backend: "postgresql"
+    db_url: "${STATE_DB_URL}"
+    table: "workflow_metrics"
+
+# ==================== RETRY POLICY ====================
+retry_policy:
+  max_retries_per_mode: 2
+  initial_delay_seconds: 5
+  backoff_multiplier: 2.0
+  max_delay_seconds: 60
+  jitter: true
+  retry_on:
+    - "timeout"
+    - "rate_limit"
+    - "temporary_failure"
+
+

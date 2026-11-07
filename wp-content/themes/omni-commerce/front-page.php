@@ -4,14 +4,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
  get_header(); ?>
 
-<main id="primary">
-    <h1 style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;"><?php esc_html_e( 'Xiaomi Store - Hệ thống phân phối sản phẩm Xiaomi chính hãng', 'omni-commerce' ); ?></h1>
+<main id="primary" class="overflow-x-clip">
+    <h1 style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;"><?php esc_html_e( 'TongKhoMi.com - Tổng kho phân phối sản phẩm Xiaomi chính hãng', 'omni-commerce' ); ?></h1>
 
 <?php get_template_part( 'template-parts/home/hero' ); ?>
 
 <?php get_template_part( 'template-parts/home/media-services' ); ?>
 
 <div id="product-row-section">
+<style>
+/* Chuẩn responsive theme: Ẩn cột banner trên mobile/tablet (< 900px), hiển thị 100% trên Desktop (>= 900px) */
+@media (max-width: 899px) {
+    .mi-product-row-banner {
+        display: none !important;
+    }
+}
+</style>
 <?php 
 // 3 danh mục sản phẩm hiển thị trên trang chủ theo yêu cầu nghiệp vụ
 $home_categories = [
@@ -22,6 +30,7 @@ $home_categories = [
         'banner_desc'     => __( 'Màn hình vô cực, trải nghiệm điện ảnh tại gia', 'omni-commerce' ),
         'banner_bg_color' => 'from-xiaomi-yellow to-tertiary-fixed',
         'banner_btn_text' => __( 'MUA NGAY', 'omni-commerce' ),
+        'banner_img'      => content_url( 'uploads/banners/left-col-tivi.jpg' ),
         'search_keywords' => ['tivi', 'tv', 'redmi'],
     ],
     [
@@ -31,6 +40,7 @@ $home_categories = [
         'banner_desc'     => __( 'Bảo quản tươi ngon, công nghệ làm lạnh kép', 'omni-commerce' ),
         'banner_bg_color' => 'from-cyan-500 to-blue-600',
         'banner_btn_text' => __( 'KHÁM PHÁ', 'omni-commerce' ),
+        'banner_img'      => content_url( 'uploads/banners/left-col-tu-lanh.jpg' ),
         'search_keywords' => ['tủ lạnh', 'tu lanh', 'tủ', '430l'],
     ],
     [
@@ -40,6 +50,7 @@ $home_categories = [
         'banner_desc'     => __( 'Tiện nghi thông minh, giải phóng sức lao động', 'omni-commerce' ),
         'banner_bg_color' => 'from-amber-500 to-orange-600',
         'banner_btn_text' => __( 'XEM NGAY', 'omni-commerce' ),
+        'banner_img'      => content_url( 'uploads/banners/left-col-gia-dinh.jpg' ),
         'search_keywords' => ['gia đình', 'robot', 'hút bụi', 'máy lọc', 'quạt', 'nồi'],
     ],
 ];
@@ -100,7 +111,10 @@ foreach ( $home_categories as $index => $cat_def ) {
     if ( isset( $acf_rows[ $index ] ) && is_array( $acf_rows[ $index ] ) ) {
         $custom = $acf_rows[ $index ];
         if ( ! empty( $custom['banner_img'] ) ) {
-            $row_args['banner_img'] = is_array( $custom['banner_img'] ) ? $custom['banner_img']['url'] : $custom['banner_img'];
+            $acf_img = is_array( $custom['banner_img'] ) ? $custom['banner_img']['url'] : $custom['banner_img'];
+            if ( stripos( $acf_img, 'placehold.co' ) === false ) {
+                $row_args['banner_img'] = $acf_img;
+            }
         }
         if ( ! empty( $custom['banner_btn_text'] ) ) {
             $row_args['banner_btn_text'] = $custom['banner_btn_text'];

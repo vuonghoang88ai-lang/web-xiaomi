@@ -93,6 +93,11 @@ if ( ! class_exists( 'VSWC_Setting_Fields_Renderer' ) ) {
 					continue;
 				}
 
+				//The pro add-on renders its own copy of this field, so don't render it twice
+				if ( isset( $main_field_settings['pro_has_own_field'] ) && true === $main_field_settings['pro_has_own_field'] && defined( 'WOOSUITE_VARIATION_SWATCHES_PRO_VERSION' ) ) {
+					continue;
+				}
+
 				if ( isset( $main_field_settings['fields'] ) && ! empty( $main_field_settings['fields'] ) ) {
 					foreach ( $main_field_settings['fields'] as $single_field ) {
 						$item_field_setting = $this->get_parsed_field_setting( $section['id'], $main_field_settings, $single_field );

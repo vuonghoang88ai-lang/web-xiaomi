@@ -1,4 +1,9 @@
-<div class="mi-warranty-check-wrapper bg-white p-6 rounded-lg shadow-md max-w-2xl mx-auto my-8 border border-gray-100">
+<?php
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+?>
+<div class="mi-warranty-check-wrapper bg-white p-4 sm:p-6 rounded-xl shadow-md max-w-2xl mx-auto my-4 sm:my-8 border border-gray-100">
     <h3 class="text-2xl font-bold text-gray-800 mb-4">Tra Cứu Bảo Hành</h3>
     <p class="text-gray-600 mb-6">Quý khách có thể tra cứu hạn bảo hành bằng Số điện thoại mua hàng hoặc Mã Serial của sản phẩm.</p>
     

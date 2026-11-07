@@ -35,15 +35,15 @@ final class TA_WC_Variation_Swatches {
 	 * Class constructor.
 	 */
 	public function __construct() {
+		// The constructor runs on plugins_loaded, which is too early to translate: WordPress 6.7+ logs a
+		// "_load_textdomain_just_in_time was called incorrectly" notice on every request. The labels are
+		// translated on init by translate_types().
 		$this->types = array(
-			'color' => esc_html__( 'Color', 'wcvs' ),
-			'image' => esc_html__( 'Image', 'wcvs' ),
-			'label' => esc_html__( 'Label', 'wcvs' ),
+			'color' => 'Color',
+			'image' => 'Image',
+			'label' => 'Label',
+			'radio' => 'Radio button',
 		);
-
-		if ( TA_WC_Variation_Swatches::is_pro_addon_active() ) {
-			$this->types['radio'] = esc_html__( 'Radio button', 'wcvs' );
-		}
 
 		$this->includes();
 		$this->init_hooks();
@@ -59,10 +59,6 @@ final class TA_WC_Variation_Swatches {
 
 		if ( is_admin() ) {
 			require_once $current_dir . '/class-admin.php';
-			require_once $current_dir . '/class-aovup-freemium.php';
-			if ( ! self::is_woo_core_active() ) {
-				require_once $current_dir . '/class-addon-page.php';
-			}
 		}
 	}
 
@@ -71,6 +67,7 @@ final class TA_WC_Variation_Swatches {
 	 */
 	public function init_hooks() {
 		add_action( 'init', array( $this, 'load_textdomain' ) );
+		add_action( 'init', array( $this, 'translate_types' ) );
 
 		add_filter( 'product_attributes_type_selector', array( $this, 'add_attribute_types' ) );
 
@@ -103,6 +100,24 @@ final class TA_WC_Variation_Swatches {
 	 */
 	public function load_textdomain() {
 		load_plugin_textdomain( 'wcvs', false, dirname( plugin_basename( TAWC_VS_PLUGIN_FILE ) ) . '/languages/' );
+	}
+
+	/**
+	 * Translate the attribute type labels set in the constructor, once the text domain is loaded
+	 */
+	public function translate_types() {
+		$labels = array(
+			'color' => esc_html__( 'Color', 'wcvs' ),
+			'image' => esc_html__( 'Image', 'wcvs' ),
+			'label' => esc_html__( 'Label', 'wcvs' ),
+			'radio' => esc_html__( 'Radio button', 'wcvs' ),
+		);
+
+		foreach ( $labels as $type => $label ) {
+			if ( isset( $this->types[ $type ] ) ) {
+				$this->types[ $type ] = $label;
+			}
+		}
 	}
 
 	/**

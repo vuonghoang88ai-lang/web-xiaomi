@@ -1,0 +1,201 @@
+        <div class="view-content-pane">
+          <div class="view-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+            <div>
+              <h3>Cấu Hình Hệ Thống & Quản Lý API Tích Hợp</h3>
+              <p>Quản lý khóa API trinh sát Serper.dev (phân biệt Google Ads & SEO) và Tùy chọn Nhà cung cấp AI (BYOK - Bring Your Own Key).</p>
+            </div>
+            <button type="button" class="btn-primary" onclick="saveAllSettings()" id="btnSaveTopSettings" style="display: flex; align-items: center; gap: 6px; font-weight: 600; padding: 8px 18px;">
+              <span>💾</span> Lưu Toàn Bộ Cấu Hình
+            </button>
+          </div>
+
+          <div class="grid-cards" style="grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 20px;">
+            <!-- CARD 1: CẤU HÌNH SERP & GOOGLE ADS / SEO RADAR -->
+            <div class="card" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(99, 102, 241, 0.3); padding: 22px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 22px;">🔍</span>
+                  <h4 style="margin: 0; font-size: 16px; color: #fff;">Trinh Sát SERP Đối Thủ (Google Ads & SEO)</h4>
+                </div>
+                <span id="serpStatusBadge" style="font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; background: rgba(99, 102, 241, 0.2); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.4);">
+                  Kiểm tra cấu hình...
+                </span>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 14px;">
+                <label style="font-size: 12.5px; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 6px;">Công cụ Quét SERP</label>
+                <select id="settingSerpProvider" class="custom-select" style="width: 100%; font-size: 13px; padding: 9px 12px;" onchange="toggleSerpFields()">
+                  <option value="serper">Google Serper.dev (Khuyên dùng — Phân biệt Ads & SEO)</option>
+                  <option value="duckduckgo">DuckDuckGo HTML (Miễn phí — Chỉ lấy kết quả SEO tự nhiên)</option>
+                </select>
+              </div>
+
+              <div id="serperConfigContainer">
+                <div class="form-group" style="margin-bottom: 14px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label style="font-size: 12.5px; font-weight: 600; color: #cbd5e1; margin-bottom: 0;">
+                      Serper.dev API Keys (Hỗ trợ xoay vòng nhiều tài khoản) *
+                    </label>
+                    <a href="https://serper.dev" target="_blank" style="font-size: 11.5px; color: #38bdf8; text-decoration: none;">
+                      Đăng ký lấy key (Free 2.500 lượt) ↗
+                    </a>
+                  </div>
+                  <textarea id="settingSerperKeys" class="chat-textarea" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 12px; padding: 8px 12px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-subtle); border-radius: 6px; color: #fff;" placeholder="Nhập một hoặc nhiều API Key phân cách bằng dấu phẩy hoặc xuống dòng:&#10;serp_api_key_acc1, serp_api_key_acc2..."></textarea>
+                  <p style="font-size: 11.5px; color: var(--text-muted); margin-top: 5px; line-height: 1.4;">
+                    ⚡ <strong>Cơ chế tự động xoay tua (Round-Robin):</strong> Bạn có thể tạo nhiều tài khoản Serper miễn phí rồi nhập vào đây. Khi một key hết credits, hệ thống sẽ tự động chuyển sang key tiếp theo.
+                  </p>
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                  <div style="flex: 1;">
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Mã quốc gia (gl)</label>
+                    <input type="text" id="settingSerpGl" class="form-input" value="vn" style="width: 100%; font-size: 12.5px; padding: 7px 10px;">
+                  </div>
+                  <div style="flex: 1;">
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Ngôn ngữ (hl)</label>
+                    <input type="text" id="settingSerpHl" class="form-input" value="vi" style="width: 100%; font-size: 12.5px; padding: 7px 10px;">
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; align-items: center;">
+                  <button type="button" class="btn-secondary" onclick="testSerpConnection()" id="btnTestSerp" style="font-size: 12.5px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px;">
+                    <span>🔌</span> Kiểm tra kết nối Serper
+                  </button>
+                  <span id="serpTestResult" style="font-size: 12px;"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- CARD 2: CẤU HÌNH ĐỘNG CƠ AI & TÙY CHỌN BYOK -->
+            <div class="card" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(99, 102, 241, 0.3); padding: 22px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 22px;">🤖</span>
+                  <h4 style="margin: 0; font-size: 16px; color: #fff;">Động Cơ Trí Tuệ Nhân Tạo (AI Engine)</h4>
+                </div>
+                <span id="aiStatusBadge" style="font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);">
+                  Hệ thống 9Router
+                </span>
+              </div>
+
+              <!-- LỰA CHỌN CHẾ ĐỘ: SYSTEM VS BYOK -->
+              <div class="form-group" style="margin-bottom: 16px;">
+                <label style="font-size: 12.5px; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 8px;">Chế độ cung cấp AI</label>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                  <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; background: rgba(15, 23, 42, 0.5); padding: 10px 12px; border-radius: 6px; border: 1px solid var(--border-subtle);">
+                    <input type="radio" name="aiModeRadio" value="system" id="radioAiSystem" checked onchange="toggleAiModeFields()" style="margin-top: 3px; cursor: pointer;">
+                    <div>
+                      <div style="font-size: 13px; font-weight: 600; color: #fff;">💎 Dùng AI mặc định của Nhà cung cấp (Hệ thống)</div>
+                      <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">Tích hợp sẵn 9Router Gateway Enterprise, mô hình combo-creater tối ưu hóa riêng cho Marketing tiếng Việt.</div>
+                    </div>
+                  </label>
+
+                  <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; background: rgba(15, 23, 42, 0.5); padding: 10px 12px; border-radius: 6px; border: 1px solid var(--border-subtle);">
+                    <input type="radio" name="aiModeRadio" value="custom" id="radioAiCustom" onchange="toggleAiModeFields()" style="margin-top: 3px; cursor: pointer;">
+                    <div>
+                      <div style="font-size: 13px; font-weight: 600; color: #38bdf8;">⚡ Tự dùng API Key AI riêng (BYOK - Bring Your Own Key)</div>
+                      <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">Dành cho bản thương mại: Khách hàng tự nhập API Key OpenAI, Google Gemini hoặc Gateway riêng.</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- KHUNG NHẬP BYOK -->
+              <div id="aiByokContainer" style="display: none; padding-top: 12px; border-top: 1px dashed rgba(255,255,255,0.1);">
+                <div class="form-group" style="margin-bottom: 12px;">
+                  <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Nhà cung cấp AI (Provider)</label>
+                  <select id="settingAiProvider" class="custom-select" style="width: 100%; font-size: 12.5px; padding: 7px 10px;" onchange="updateDefaultAiEndpoints()">
+                    <option value="openai">OpenAI (GPT-4o, GPT-4o-mini)</option>
+                    <option value="gemini">Google Gemini (Gemini 1.5 Flash/Pro)</option>
+                    <option value="anthropic">Anthropic (Claude 3.5 Sonnet)</option>
+                    <option value="custom">Tùy chỉnh (OpenAI-Compatible Gateway / Proxy)</option>
+                  </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 12px;">
+                  <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">AI API Key *</label>
+                  <input type="password" id="settingAiApiKey" class="form-input" placeholder="sk-..." style="width: 100%; font-size: 12.5px; padding: 7px 10px; font-family: monospace;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 12px;">
+                  <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Base URL (Endpoint API)</label>
+                  <input type="url" id="settingAiBaseUrl" class="form-input" placeholder="https://api.openai.com/v1" style="width: 100%; font-size: 12.5px; padding: 7px 10px; font-family: monospace;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                  <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Tên Model (Model Identifier)</label>
+                  <input type="text" id="settingAiModelName" class="form-input" placeholder="gpt-4o" value="gpt-4o" style="width: 100%; font-size: 12.5px; padding: 7px 10px; font-family: monospace;">
+                </div>
+
+                <div style="display: flex; gap: 10px; align-items: center;">
+                  <button type="button" class="btn-secondary" onclick="testAiConnection()" id="btnTestAi" style="font-size: 12.5px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px;">
+                    <span>⚡</span> Kiểm tra kết nối AI
+                  </button>
+                  <span id="aiTestResult" style="font-size: 12px;"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- CARD 3: TÌNH BÁO THẨM QUYỀN & BACKLINK (MOZ FREE POOL & 0Đ RDAP/DORKING) -->
+            <div class="card" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(99, 102, 241, 0.3); padding: 22px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 22px;">🛡️</span>
+                  <h4 style="margin: 0; font-size: 16px; color: #fff;">Thẩm Quyền Tên Miền & Backlink (Moz Free Pool)</h4>
+                </div>
+                <span id="authorityStatusBadge" style="font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">
+                  Cơ chế 0đ (RDAP & Dorking)
+                </span>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 14px;">
+                <label style="font-size: 12.5px; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 6px;">Chế độ tính toán Thẩm quyền E-E-A-T</label>
+                <select id="settingAuthorityMode" class="custom-select" style="width: 100%; font-size: 13px; padding: 9px 12px;" onchange="toggleAuthorityFields()">
+                  <option value="free_rdap_dork">Hoàn toàn Miễn phí (0đ) — Tuổi tên miền Footer/RDAP + Google Dorking Citations</option>
+                  <option value="moz_pool">Cụm Moz Free API Pool (Xoay tua nhiều tài khoản Free 2.500 lượt/tháng)</option>
+                </select>
+              </div>
+
+              <div id="mozConfigContainer" style="display: none;">
+                <div class="form-group" style="margin-bottom: 14px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label style="font-size: 12.5px; font-weight: 600; color: #cbd5e1; margin-bottom: 0;">
+                      Moz API Key Pairs (access_id:secret_key)
+                    </label>
+                    <a href="https://moz.com/community" target="_blank" style="font-size: 11.5px; color: #38bdf8; text-decoration: none;">
+                      Đăng ký Moz Community (Free 2.500 calls) ↗
+                    </a>
+                  </div>
+                  <textarea id="settingMozKeys" class="chat-textarea" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 12px; padding: 8px 12px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-subtle); border-radius: 6px; color: #fff;" placeholder="Nhập một hoặc nhiều cặp access_id:secret_key phân cách bằng xuống dòng:&#10;mozfun-acc1:secretkey1&#10;mozfun-acc2:secretkey2"></textarea>
+                  <p style="font-size: 11.5px; color: var(--text-muted); margin-top: 5px; line-height: 1.4;">
+                    ⚡ <strong>Hỗ trợ xoay vòng Round-Robin:</strong> Tự động luân chuyển sang tài khoản tiếp theo nếu gặp lỗi giới hạn 429 hoặc 403. Nếu tất cả key hết hạn, tự động fallback về 0đ (Google Dorking & Footer RDAP).
+                  </p>
+                </div>
+              </div>
+
+              <div style="margin-bottom: 16px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" id="settingEnableDorking" checked style="cursor: pointer;">
+                  <span style="font-size: 12.5px; color: #cbd5e1;">Bật Google Dorking Citations (<code>"domain" -site:domain</code>) ước tính độ phủ thương hiệu</span>
+                </label>
+              </div>
+
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <button type="button" class="btn-secondary" onclick="testAuthorityConnection()" id="btnTestAuthority" style="font-size: 12.5px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px;">
+                  <span>🔍</span> Kiểm tra Thẩm quyền & Moz Pool
+                </button>
+                <span id="authorityTestResult" style="font-size: 12px;"></span>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 24px; padding: 18px 20px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-subtle); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div style="font-size: 12.5px; color: var(--text-muted); line-height: 1.5;">
+              🔒 <strong>Bảo mật thông tin:</strong> Toàn bộ API Key được mã hóa và lưu trữ an toàn trong cơ sở dữ liệu PostgreSQL (`marketing_saas`). Giao diện chỉ hiển thị dạng rút gọn để bảo vệ quyền riêng tư.
+            </div>
+            <button type="button" class="btn-primary" onclick="saveAllSettings()" id="btnSaveBottomSettings" style="font-size: 13px; padding: 9px 22px; font-weight: 600;">
+              💾 Lưu Cấu Hình Hệ Thống
+            </button>
+          </div>
+        </div>
+

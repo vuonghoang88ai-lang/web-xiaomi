@@ -12,7 +12,7 @@ class Mi_ERP_Frontend {
     }
 
     public static function enqueue_scripts() {
-        wp_enqueue_style( 'mi-erp-frontend-style', plugins_url( 'assets/css/style.css', dirname( __FILE__, 2 ) ), array(), time() );
+        wp_enqueue_style( 'mi-erp-frontend-style', plugins_url( '../../assets/css/style.css', __FILE__ ), array(), file_exists( dirname( dirname( dirname( __FILE__ ) ) ) . '/assets/css/style.css' ) ? filemtime( dirname( dirname( dirname( __FILE__ ) ) ) . '/assets/css/style.css' ) : '1.0.0' );
         wp_register_script( 'mi-erp-frontend-js', plugins_url( 'js/mi-erp-frontend.js', __FILE__ ), array( 'jquery' ), time(), true );
         wp_localize_script( 'mi-erp-frontend-js', 'mi_erp_frontend', array(
             'ajax_url' => admin_url( 'admin-ajax.php' ),
@@ -68,12 +68,30 @@ class Mi_ERP_Frontend {
         // 1. Phân loại tra cứu (Số điện thoại vs Serial)
         if ( is_numeric( $query_string ) && strlen( $query_string ) >= 9 && strlen( $query_string ) <= 11 ) {
             
-            // Dùng LIKE %s với prepare
+            // Dùng LIKE %s với prepare - hỗ trợ cả HPOS wc_order_addresses và wp_postmeta
             $like_phone = '%' . $wpdb->esc_like( $query_string ) . '%';
-            $order_ids = $wpdb->get_col( $wpdb->prepare( "
-                SELECT post_id FROM {$wpdb->postmeta} 
+            $hpos_table = $wpdb->prefix . 'wc_order_addresses';
+            $order_ids  = array();
+
+            if ( $wpdb->get_var( "SHOW TABLES LIKE '$hpos_table'" ) === $hpos_table ) {
+                $hpos_ids = $wpdb->get_col( $wpdb->prepare( "
+                    SELECT DISTINCT order_id FROM {$hpos_table} 
+                    WHERE address_type = 'billing' AND phone LIKE %s
+                ", $like_phone ) );
+                if ( ! empty( $hpos_ids ) ) {
+                    $order_ids = array_merge( $order_ids, $hpos_ids );
+                }
+            }
+
+            $postmeta_ids = $wpdb->get_col( $wpdb->prepare( "
+                SELECT DISTINCT post_id FROM {$wpdb->postmeta} 
                 WHERE meta_key = '_billing_phone' AND meta_value LIKE %s
             ", $like_phone ) );
+            if ( ! empty( $postmeta_ids ) ) {
+                $order_ids = array_merge( $order_ids, $postmeta_ids );
+            }
+
+            $order_ids = array_unique( array_filter( array_map( 'intval', $order_ids ) ) );
 
             if ( ! empty( $order_ids ) ) {
                 $placeholders = implode( ',', array_fill( 0, count( $order_ids ), '%d' ) );

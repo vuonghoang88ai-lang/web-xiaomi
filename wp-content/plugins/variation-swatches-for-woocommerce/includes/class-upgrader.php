@@ -39,33 +39,34 @@ if ( ! class_exists( 'VSWC_Upgrader' ) ) {
 		 * Showing the warning message after upgrading plugin
 		 */
 		public function show_warning_message_after_upgrading() {
+			global $pagenow;
 
-			if ( $this->is_admin_notice_should_be_shown()
-			     && ! TA_WC_Variation_Swatches::is_in_plugin_settings_page() ) {
-				$url = admin_url( 'admin.php?page=variation-swatches-settings' );
-				?>
-                <div class="notice-warning notice is-dismissible">
-                    <p><?php printf( __( 'You need to update new settings for the Variation Swatches plugin <a href="%s">here</a>.', 'wcvs' ), $url ); ?></p>
-                </div>
-				<?php
-			}
-		}
-
-		/**
-		 * Check if the welcome popup should be shown in the settings page
-		 *
-		 * @return bool
-		 */
-		public function is_welcome_popup_should_be_shown() {
-			$this->saved_plugin_version = $this->get_current_plugin_version();
-
-			if ( ! $this->is_welcome_page_is_already_show() ) {
-				$this->mark_welcome_page_shown_for_new_version();
-
-				return $this->is_notice_allowed_to_show();
+			// Only on the Plugins screen and on the plugin's own settings page, never across the whole admin.
+			$is_settings_page = TA_WC_Variation_Swatches::is_in_plugin_settings_page();
+			if ( ! $is_settings_page && 'plugins.php' !== $pagenow ) {
+				return;
 			}
 
-			return false;
+			if ( ! $this->is_admin_notice_should_be_shown() ) {
+				return;
+			}
+			?>
+            <div class="notice-warning notice is-dismissible">
+                <p>
+					<?php
+					if ( $is_settings_page ) {
+						esc_html_e( 'Click Save to store your Variation Swatches settings.', 'wcvs' );
+					} else {
+						printf(
+							/* translators: %s: URL of the plugin's settings page */
+							wp_kses( __( 'You need to update new settings for the Variation Swatches plugin <a href="%s">here</a>.', 'wcvs' ), array( 'a' => array( 'href' => array() ) ) ),
+							esc_url( admin_url( 'admin.php?page=variation-swatches-settings' ) )
+						);
+					}
+					?>
+                </p>
+            </div>
+			<?php
 		}
 
 		/**
@@ -105,20 +106,6 @@ if ( ! class_exists( 'VSWC_Upgrader' ) ) {
 		}
 
 		/**
-		 * Mark the welcome page is already shown to hide it next time
-		 */
-		private function mark_welcome_page_shown_for_new_version() {
-			update_option( 'wcvs_welcome_page_shown_v_' . $this->get_slugify_string_of_current_version(), 1 );
-		}
-
-		/**
-		 * @return false|mixed|void
-		 */
-		private function is_welcome_page_is_already_show() {
-			return get_option( 'wcvs_welcome_page_shown_v_' . $this->get_slugify_string_of_current_version(), false );
-		}
-
-		/**
 		 * Checking if the new settings has been update after upgrading
 		 *
 		 * @return bool
@@ -130,16 +117,6 @@ if ( ! class_exists( 'VSWC_Upgrader' ) ) {
 			}
 
 			return true;
-		}
-
-		/**
-		 * Change the version number to slug.
-		 * For example: 2.0.1 -> 2_0_1
-		 *
-		 * @return array|string|string[]
-		 */
-		private function get_slugify_string_of_current_version() {
-			return str_replace( array( '.', '-' ), '_', WCVS_PLUGIN_VERSION );
 		}
 
 		/**

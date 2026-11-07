@@ -7,9 +7,9 @@ pipeline {
         LIVE_DIR = "/home/ubuntu/michinhhang"
         
         
-        // Cấu hình Telegram Bot
-        TELEGRAM_TOKEN = "7834830282:AAGupEEZ4IYjfmO_FkNFFsmBVzd6F1JpxPg"
-        TELEGRAM_CHAT_ID = "5094340711"
+        // Cấu hình Telegram Bot qua biến môi trường / Jenkins credentials
+        TELEGRAM_TOKEN = credentials('telegram-bot-token') ?: env.TELEGRAM_TOKEN
+        TELEGRAM_CHAT_ID = credentials('telegram-chat-id') ?: env.TELEGRAM_CHAT_ID
     }
 
     stages {

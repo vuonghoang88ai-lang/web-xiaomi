@@ -9,6 +9,11 @@ class Mi_ERP_SEO_Schema {
     }
 
     public static function render_schema() {
+        // Nếu website đang sử dụng plugin SEO chuyên dụng (Rank Math, Yoast SEO...), nhường toàn quyền để tránh trùng lặp Schema
+        if ( defined( 'RANK_MATH_VERSION' ) || function_exists( 'rank_math' ) || defined( 'WPSEO_VERSION' ) ) {
+            return;
+        }
+
         if ( is_singular( 'product' ) ) {
             self::render_product_schema();
         } elseif ( is_single() || is_page() ) {
@@ -69,6 +74,19 @@ class Mi_ERP_SEO_Schema {
 
         $image = get_the_post_thumbnail_url( $post->ID, 'full' ) ?: '';
 
+        $custom_logo_id = get_theme_mod( 'custom_logo' );
+        $logo_url       = '';
+        if ( $custom_logo_id ) {
+            $logo_img = wp_get_attachment_image_src( $custom_logo_id, 'full' );
+            $logo_url = $logo_img ? $logo_img[0] : '';
+        }
+        if ( empty( $logo_url ) && function_exists( 'get_field' ) ) {
+            $logo_url = get_field( 'mi_logo', 'option' ) ?: '';
+        }
+        if ( empty( $logo_url ) ) {
+            $logo_url = get_template_directory_uri() . '/assets/images/tongkhomi-logo.png';
+        }
+
         $schema = array(
             '@context'      => 'https://schema.org',
             '@type'         => 'Article',
@@ -85,7 +103,7 @@ class Mi_ERP_SEO_Schema {
                 'name'  => get_bloginfo( 'name' ),
                 'logo'  => array(
                     '@type' => 'ImageObject',
-                    'url'   => '' // TODO: Can fetch from customizer/acf if needed
+                    'url'   => esc_url( $logo_url )
                 )
             )
         );

@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 get_header(); ?>
 
-<main id="primary" class="container mx-auto max-w-[1440px] px-4 py-8">
+<main id="primary" class="mx-auto max-w-[1440px] px-4 py-8">
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
         
         <!-- Main Content (Left 3 cols) -->
@@ -63,8 +63,8 @@ get_header(); ?>
                                         <a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
                                     </h2>
                                     <div class="flex items-center gap-3 text-gray-300 text-[12px]">
-                                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">person</span> <?php the_author(); ?></span>
-                                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">schedule</span> <?php echo get_the_date(); ?></span>
+                                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">person</span> <?php echo esc_html( get_the_author() ); ?></span>
+                                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">schedule</span> <?php echo esc_html( get_the_date() ); ?></span>
                                     </div>
                                 </div>
                             </div>
@@ -99,6 +99,7 @@ get_header(); ?>
                 <!-- Standard List -->
                 <div class="flex flex-col gap-6">
                     <?php 
+                    rewind_posts();
                     if ( have_posts() ) :
                         while ( have_posts() ) : the_post(); ?>
                             
@@ -117,8 +118,8 @@ get_header(); ?>
                                         <a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
                                     </h3>
                                     <div class="flex items-center gap-3 text-outline text-[12px] mb-2">
-                                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">person</span> <?php the_author(); ?></span>
-                                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">schedule</span> <?php echo get_the_date(); ?></span>
+                                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">person</span> <?php echo esc_html( get_the_author() ); ?></span>
+                                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">schedule</span> <?php echo esc_html( get_the_date() ); ?></span>
                                     </div>
                                     <div class="text-gray-600 text-[14px] line-clamp-3 mb-2">
                                         <?php the_excerpt(); ?>

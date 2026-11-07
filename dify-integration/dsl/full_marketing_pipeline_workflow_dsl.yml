@@ -1,0 +1,335 @@
+app:
+  description: >
+    Quy trình tự động hóa toàn diện Phòng Marketing AI (Autonomous Marketing Pipeline).
+    Kế thừa chuỗi điều phối từ CrewAI: Tự động chạy qua W1 (Tình báo đối thủ) ➜
+    W2 (Phân tích intent) ➜ W3 (Chiến lược dàn ý & Silo) ➜ W4 (Viết bài chuẩn SOP 12) ➜ W5 (Kiểm định chất lượng QA) ➜
+    W6 (Tái chế kịch bản TikTok & Facebook).
+  icon: ⚡
+  icon_background: '#EEF2FF'
+  mode: workflow
+  name: Multi-Agent Marketing Pipeline (SOP 12 & 16)
+kind: app
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions:
+        - .jpg
+        - .png
+        - .webp
+      allowed_file_types:
+        - image
+      allowed_file_upload_methods:
+        - local_file
+        - remote_url
+      enabled: false
+      number_limits: 3
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+  graph:
+    edges:
+      - id: edge_start_to_w1
+        source: node_start
+        target: node_w1_intel
+      - id: edge_w1_to_w2
+        source: node_w1_intel
+        target: node_w2_analysis
+      - id: edge_w2_to_w3
+        source: node_w2_analysis
+        target: node_w3_strategy
+      - id: edge_w3_to_w4
+        source: node_w3_strategy
+        target: node_w4_writing
+      - id: edge_w4_to_w5
+        source: node_w4_writing
+        target: node_w5_qa
+      - id: edge_w5_to_gate
+        source: node_w5_qa
+        target: node_qa_gate
+      - id: edge_gate_pass_to_w6
+        source: node_qa_gate
+        sourceHandle: pass
+        target: node_w6_social
+      - id: edge_gate_fail_to_end
+        source: node_qa_gate
+        sourceHandle: "false"
+        target: node_end_rejected
+      - id: edge_w6_to_end
+        source: node_w6_social
+        target: node_end_approved
+    nodes:
+      - data:
+          title: Khởi Đầu Pipeline
+          type: start
+          variables:
+            - label: Từ Khóa SEO Chính (Target Keyword)
+              max_length: 200
+              options: []
+              required: true
+              type: text-input
+              variable: keyword
+            - label: URL Đối Thủ Cần Trinh Sát (Tùy chọn)
+              max_length: 500
+              options: []
+              required: false
+              type: text-input
+              variable: competitor_url
+            - label: "Chuyên Mục Sản Phẩm/Dịch Vụ (VD: Điện máy, Nha khoa...)"
+              max_length: 100
+              options: []
+              required: true
+              type: text-input
+              variable: category_name
+            - label: "Bối cảnh thương hiệu, bằng chứng và giới hạn tuân thủ (tùy chọn)"
+              max_length: 3000
+              options: []
+              required: false
+              type: paragraph
+              variable: brand_context
+        id: node_start
+        position:
+          x: 50
+          y: 200
+        type: custom
+
+      - data:
+          title: W1 - Tình Báo Đối Thủ
+          type: llm
+          model:
+            mode: chat
+            name: combo-creater
+            provider: langgenius/openai_api_compatible/openai_api_compatible
+          prompt_template:
+            - role: system
+              text: >
+                Bạn là Worker 1 (Market Intel Specialist) của dự án.
+                Chỉ dùng dữ liệu SERP/scraper được xác minh; nếu thiếu dữ liệu hãy ghi no_results/unverified.
+                Hãy phân tích SERP và cấu trúc đối thủ cho từ khóa được giao, rồi trích xuất 3 Content Gaps.
+                Không tự tạo thương hiệu, giá, chính sách, địa chỉ hoặc hotline.
+            - role: user
+              text: >
+                Từ khóa mục tiêu: {{#node_start.keyword#}}
+                Ngành hàng: {{#node_start.category_name#}}
+                URL đối thủ tham khảo: {{#node_start.competitor_url#}}
+                Bối cảnh thương hiệu: {{#node_start.brand_context#}}
+        id: node_w1_intel
+        position:
+          x: 350
+          y: 200
+        type: custom
+
+      - data:
+          title: W2 - Phân Tích Intent & Chống Ăn Thịt Từ Khóa
+          type: llm
+          model:
+            mode: chat
+            name: combo-creater
+            provider: langgenius/openai_api_compatible/openai_api_compatible
+          prompt_template:
+            - role: system
+              text: >
+                Bạn là Worker 2 (Data Analyst). Hãy phân loại từ khóa/chủ đề theo intent A/B/C/D,
+                gán ưu tiên P1/P2/P3 và kiểm tra nguy cơ cannibalization.
+                Không suy đoán volume, CTR, giá hoặc dữ liệu GSC nếu chưa được cung cấp.
+                Trả về bảng: Từ khóa | Intent | Priority | URL/loại nội dung mục tiêu | Rủi ro trùng lặp | Cơ sở dữ liệu.
+            - role: user
+              text: >
+                Từ khóa mục tiêu: {{#node_start.keyword#}}
+                Ngành hàng/dịch vụ: {{#node_start.category_name#}}
+                Báo cáo W1:
+                {{#node_w1_intel.text#}}
+        id: node_w2_analysis
+        position:
+          x: 500
+          y: 200
+        type: custom
+
+      - data:
+          title: W3 - Kiến Trúc Dàn Ý & Silo
+          type: llm
+          model:
+            mode: chat
+            name: combo-creater
+            provider: langgenius/openai_api_compatible/openai_api_compatible
+          prompt_template:
+            - role: system
+              text: >
+                Bạn là Worker 3 (SEO Strategist) của dự án.
+                Dựa trên báo cáo đối thủ từ W1, hãy lập dàn ý chi tiết theo tháp Heading H1 > H2 > H3.
+                Bắt buộc lồng ghép:
+                - 1 Bảng so sánh thông số kỹ thuật.
+                - 5 câu hỏi FAQ có câu trả lời súc tích.
+                - 4 link chính sách (/chinh-sach-bao-hanh, /chinh-sach-doi-tra, /tra-cuu-bao-hanh, /chinh-sach-van-chuyen).
+                - Chỉ chèn thông tin liên hệ/chính sách nếu có trong bối cảnh thương hiệu đã cung cấp.
+            - role: user
+              text: >
+                Từ khóa: {{#node_start.keyword#}}
+                Báo cáo từ W1:
+                {{#node_w1_intel.text#}}
+                Phân tích W2:
+                {{#node_w2_analysis.text#}}
+                Bối cảnh thương hiệu: {{#node_start.brand_context#}}
+        id: node_w3_strategy
+        position:
+          x: 650
+          y: 200
+        type: custom
+
+      - data:
+          title: W4 - Viết Bài Chuẩn SOP 12
+          type: llm
+          model:
+            mode: chat
+            name: combo-creater
+            provider: langgenius/openai_api_compatible/openai_api_compatible
+          prompt_template:
+            - role: system
+              text: >
+                Bạn là Worker 4 (Senior Copywriter) của dự án.
+                Hãy chấp bút toàn văn bài viết chuẩn SEO E-E-A-T & CRO (1500 - 2500 từ).
+                QUY CHUẨN KHẮC KHE:
+                - 0% từ sáo rỗng AI: CẤM "bức tranh toàn cảnh", "theo dõi sát sao", "đáng kinh ngạc", "tận dụng tối đa"...
+                - Biến thông số thành lợi ích cho người dùng (CRO).
+                - Đầy đủ Bảng Markdown so sánh thông số & Giá bán.
+                - Đầy đủ 5 câu hỏi FAQ.
+                - Chỉ sử dụng claims, liên kết chính sách, địa chỉ và hotline có trong bối cảnh thương hiệu hoặc nguồn đã xác minh.
+            - role: user
+              text: >
+                Từ khóa: {{#node_start.keyword#}}
+                Dàn ý từ W3:
+                {{#node_w3_strategy.text#}}
+                Bối cảnh thương hiệu: {{#node_start.brand_context#}}
+        id: node_w4_writing
+        position:
+          x: 950
+          y: 200
+        type: custom
+
+      - data:
+          title: W5 - Kiểm Định QA 7 Tầng
+          type: llm
+          model:
+            mode: chat
+            name: combo-creater
+            provider: langgenius/openai_api_compatible/openai_api_compatible
+          prompt_template:
+            - role: system
+              text: >
+                Bạn là Worker 5 (QA Editor) của dự án.
+                Hãy chấm điểm bài viết do W4 viết theo thang 100 điểm của SOP 12:
+                1. Cấu trúc Heading: /15đ
+                2. Độ dài bài viết: /15đ
+                3. Không từ sáo rỗng AI: /15đ
+                4. CRO tính năng thành lợi ích: /15đ
+                5. Claims/liên kết/chính sách có nguồn xác minh: /15đ
+                6. Bảng so sánh & FAQ: /15đ
+                7. Khách quan, không lộ tên đối thủ: /10đ
+                Tổng điểm: .../100 (Đạt nếu >= 75đ).
+                Đưa ra kết luận bắt buộc ở dòng cuối: QA_STATUS=PASS hoặc QA_STATUS=FAIL.
+                Chỉ PASS khi tổng điểm >= 75 và không có claim chưa xác minh.
+            - role: user
+              text: >
+                Bài viết cần kiểm tra:
+                {{#node_w4_writing.text#}}
+        id: node_w5_qa
+        position:
+          x: 1250
+          y: 200
+        type: custom
+
+      - data:
+          title: QA Quality Gate
+          type: if-else
+          cases:
+            - case_id: pass
+              logical_operator: and
+              conditions:
+                - comparison_operator: contains
+                  value: "QA_STATUS=PASS"
+                  variable_selector:
+                    - node_w5_qa
+                    - text
+          selected: false
+        id: node_qa_gate
+        position:
+          x: 1450
+          y: 200
+        type: custom
+
+      - data:
+          title: W6 - Tái Chế Kịch Bản TikTok & Facebook
+          type: llm
+          model:
+            mode: chat
+            name: combo-creater
+            provider: langgenius/openai_api_compatible/openai_api_compatible
+          prompt_template:
+            - role: system
+              text: >
+                Bạn là Worker 6 (Social Media Repurposer) của dự án.
+                Từ bài viết blog hoàn chỉnh, hãy sáng tạo:
+                1. Kịch bản video TikTok/Reels 60s (Bảng 4 cột: Thời gian, Cảnh quay, Âm thanh, Lời thoại + Text overlay).
+                2. Bài đăng Facebook Fanpage dựa đúng trên dữ liệu bài viết và bối cảnh thương hiệu; không tự thêm cam kết/hotline.
+                3. Ma trận hashtag 4 tầng.
+            - role: user
+              text: >
+                Sản phẩm / Từ khóa: {{#node_start.keyword#}}
+                Chỉ tạo nội dung nếu báo cáo QA có `QA_STATUS=PASS`. Nếu không, trả `SOCIAL_STATUS=BLOCKED`.
+                Bài viết nguồn:
+                {{#node_w4_writing.text#}}
+                Báo cáo QA:
+                {{#node_w5_qa.text#}}
+        id: node_w6_social
+        position:
+          x: 1550
+          y: 200
+        type: custom
+
+      - data:
+          title: Phê Duyệt & Xuất Bản Thành Công
+          type: end
+          outputs:
+            - value_selector:
+                - node_w4_writing
+                - text
+              variable: full_seo_article
+            - value_selector:
+                - node_w5_qa
+                - text
+              variable: qa_evaluation_report
+            - value_selector:
+                - node_w6_social
+                - text
+              variable: social_media_campaign
+        id: node_end_approved
+        position:
+          x: 1850
+          y: 100
+        type: custom
+
+      - data:
+          title: Từ Chối Do Chưa Đạt QA (Cần Sửa)
+          type: end
+          outputs:
+            - value_selector:
+                - node_w4_writing
+                - text
+              variable: rejected_draft_article
+            - value_selector:
+                - node_w5_qa
+                - text
+              variable: qa_rejection_reasons
+        id: node_end_rejected
+        position:
+          x: 1850
+          y: 350
+        type: custom

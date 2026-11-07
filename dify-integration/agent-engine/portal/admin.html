@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Master Super Admin Console — Quản Trị Bản Quyền & Khách Hàng</title>
+  <meta http-equiv="Permissions-Policy" content="unload=*">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/portal/portal_admin.css?v=20261031_0400">
+</head>
+<body class="admin-body">
+  <!-- Header -->
+  <header class="admin-header">
+    <div class="admin-brand">
+      <div class="admin-brand-icon">👑</div>
+      <div>
+        <h2 style="margin: 0; font-size: 17px; font-weight: 700; color: #fff;">Omni Marketing SaaS</h2>
+        <span style="font-size: 11px; color: var(--admin-muted); font-weight: 500;">Master Super Admin Console</span>
+      </div>
+    </div>
+    <div style="display: flex; gap: 12px; align-items: center;">
+      <a href="/" target="_blank" class="admin-btn admin-btn-secondary" style="text-decoration: none;">
+        ← Về Client Workspace
+      </a>
+      <button type="button" class="admin-btn admin-btn-danger" onclick="handleAdminLogout()">
+        Đăng Xuất
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="admin-container">
+    <!-- Top Stats -->
+    <div class="admin-stats-grid">
+      <div class="admin-stat-card">
+        <div class="stat-label">Tổng Số Website</div>
+        <div class="stat-value" id="statTotalSites">--</div>
+      </div>
+      <div class="admin-stat-card">
+        <div class="stat-label" style="color: #60a5fa;">🎁 Đang Dùng Thử (7d)</div>
+        <div class="stat-value" id="statTrialSites" style="color: #60a5fa;">--</div>
+      </div>
+      <div class="admin-stat-card">
+        <div class="stat-label" style="color: #34d399;">👑 Đang Trả Phí</div>
+        <div class="stat-value" id="statPaidSites" style="color: #34d399;">--</div>
+      </div>
+      <div class="admin-stat-card">
+        <div class="stat-label" style="color: #f59e0b;">⚠️ Sắp Hết Hạn (&le;7d)</div>
+        <div class="stat-value" id="statExpiringSoon" style="color: #f59e0b;">--</div>
+      </div>
+      <div class="admin-stat-card">
+        <div class="stat-label" style="color: #ef4444;">🔴 Đã Hết Hạn</div>
+        <div class="stat-value" id="statExpiredSites" style="color: #ef4444;">--</div>
+      </div>
+    </div>
+
+    <!-- Master Licenses Table Wrapper -->
+    <div class="admin-table-wrapper">
+      <div class="admin-table-toolbar">
+        <div style="display: flex; gap: 10px; align-items: center; flex: 1; max-width: 450px;">
+          <input type="text" id="searchDomainInput" placeholder="🔍 Tìm kiếm theo tên miền hoặc dự án..." oninput="filterLicenses()" 
+                 style="width: 100%; padding: 8px 12px; background: rgba(15, 23, 42, 0.8); border: 1px solid var(--admin-border); border-radius: 6px; color: #fff; font-size: 13px;">
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <select id="filterPlanStatus" onchange="filterLicenses()" 
+                  style="padding: 8px 12px; background: rgba(15, 23, 42, 0.8); border: 1px solid var(--admin-border); border-radius: 6px; color: #fff; font-size: 13px; cursor: pointer;">
+            <option value="all">Tất cả trạng thái</option>
+            <option value="trial">Chỉ site Dùng Thử</option>
+            <option value="paid">Chỉ site Trả Phí</option>
+            <option value="expiring">Sắp hết hạn (&le;7 ngày)</option>
+            <option value="expired">Đã hết hạn</option>
+          </select>
+          <button type="button" class="admin-btn admin-btn-secondary" onclick="loadAdminData()" title="Làm mới">
+            🔄 Làm Mới
+          </button>
+        </div>
+      </div>
+
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Tên Miền (Khóa Cứng)</th>
+            <th>Gói Cước</th>
+            <th>Hạn Dùng / Còn Lại</th>
+            <th>License Key</th>
+            <th>Lần Cuối Heartbeat</th>
+            <th>Thao Tác Admin</th>
+          </tr>
+        </thead>
+        <tbody id="adminLicenseTbody">
+          <tr><td colspan="6" style="text-align: center; color: var(--admin-muted); padding: 30px;">Đang tải dữ liệu bản quyền...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Login Modal Overlay -->
+  <div class="admin-modal-overlay" id="adminLoginModal">
+    <div class="admin-modal-box">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div style="font-size: 36px; margin-bottom: 8px;">🔐</div>
+        <h3 style="margin: 0; font-size: 18px; color: #fff;">Xác Thực Super Admin</h3>
+        <p style="font-size: 12.5px; color: var(--admin-muted); margin-top: 4px;">Nhập Master Admin Key để truy cập bảng điều khiển.</p>
+      </div>
+      <form onsubmit="handleAdminLogin(event)">
+        <div style="margin-bottom: 16px;">
+          <input type="password" id="inputMasterKey" placeholder="Nhập Master Key..." 
+                 style="width: 100%; box-sizing: border-box; padding: 10px 14px; background: rgba(15, 23, 42, 0.8); border: 1px solid var(--admin-border); border-radius: 6px; color: #fff; font-size: 13.5px;" required>
+        </div>
+        <button type="submit" class="admin-btn admin-btn-primary" style="width: 100%; padding: 10px; justify-content: center; font-size: 13.5px;">
+          Xác Thực & Đăng Nhập
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Admin Configure Plan Modal -->
+  <div class="admin-modal-overlay" id="adminPlanModal">
+    <div class="admin-modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--admin-border); padding-bottom: 12px;">
+        <div>
+          <h3 style="margin: 0; font-size: 16px; color: #fff;">Cấp Phép & Đổi Gói Cước</h3>
+          <p id="adminModalDomain" style="margin: 2px 0 0 0; font-size: 13px; color: #60a5fa; font-weight: 600;"></p>
+        </div>
+        <button type="button" onclick="closeAdminPlanModal()" style="background: none; border: none; color: var(--admin-muted); font-size: 18px; cursor: pointer;">✕</button>
+      </div>
+
+      <div style="margin-bottom: 14px;">
+        <label style="font-size: 12.5px; color: var(--admin-muted); display: block; margin-bottom: 6px; font-weight: 600;">Chọn Gói Cước</label>
+        <select id="selectAdminPlan" onchange="toggleAdminCustomDays()" 
+                style="width: 100%; padding: 9px 12px; background: rgba(15, 23, 42, 0.9); border: 1px solid var(--admin-border); border-radius: 6px; color: #fff; font-size: 13px;">
+          <option value="trial_7d">🎁 Dùng Thử Miễn Phí (7 Ngày)</option>
+          <option value="plan_1m">📦 Gói 1 Tháng (30 Ngày)</option>
+          <option value="plan_3m">📦 Gói 3 Tháng (90 Ngày)</option>
+          <option value="plan_6m">📦 Gói 6 Tháng (180 Ngày)</option>
+          <option value="plan_9m">📦 Gói 9 Tháng (270 Ngày)</option>
+          <option value="plan_12m">📦 Gói 12 Tháng (365 Ngày)</option>
+          <option value="custom">⚙️ Gói Tùy Chỉnh (Nhập số ngày linh hoạt)</option>
+        </select>
+      </div>
+
+      <div id="adminCustomDaysBox" style="display: none; margin-bottom: 14px;">
+        <label style="font-size: 12.5px; color: var(--admin-muted); display: block; margin-bottom: 6px; font-weight: 600;">Số Ngày Cấp Phép Tùy Chỉnh</label>
+        <input type="number" id="inputAdminCustomDays" min="1" max="3650" value="45" 
+               style="width: 100%; box-sizing: border-box; padding: 8px 12px; background: rgba(15, 23, 42, 0.9); border: 1px solid var(--admin-border); border-radius: 6px; color: #fff; font-size: 13px;">
+      </div>
+
+      <div style="margin-bottom: 16px; background: rgba(15, 23, 42, 0.5); padding: 10px 12px; border-radius: 6px; border: 1px solid var(--admin-border);">
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #cbd5e1; cursor: pointer;">
+          <input type="checkbox" id="checkAdminExtendExisting" style="cursor: pointer;">
+          <span>Cộng dồn vào số ngày còn lại (Gia hạn nối tiếp)</span>
+        </label>
+        <p style="font-size: 11px; color: var(--admin-muted); margin: 4px 0 0 22px;">
+          Mặc định: Hệ thống đặt lại chuẩn xác số ngày của gói tính từ hôm nay. Tích chọn nếu muốn cộng thêm ngày vào thời hạn cũ.
+        </p>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
+        <button type="button" class="admin-btn admin-btn-secondary" onclick="closeAdminPlanModal()">Hủy</button>
+        <button type="button" class="admin-btn admin-btn-primary" onclick="saveAdminPlan()">Áp Dụng Bản Quyền</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/portal/portal_admin.js?v=20261031_0400"></script>
+</body>
+</html>

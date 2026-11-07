@@ -1,0 +1,25 @@
+# Autonomous Marketing Multi-Agent Engine & Scraper Dependencies
+# Hỗ trợ giả lập vân tay trình duyệt Chrome (TLS impersonation) & Playwright Stealth
+
+fastapi>=0.110.0
+uvicorn[standard]>=0.28.0
+pydantic>=2.0.0
+beautifulsoup4>=4.12.0
+requests>=2.31.0
+curl_cffi>=0.7.0
+playwright>=1.40.0
+playwright-stealth>=2.0.0
+psycopg2-binary>=2.9.9
+Pillow>=10.0.0
+numpy>=1.24.0
+markdown>=3.5.0
+cryptography>=42.0.0
+
+# CrewAI & Agent Framework
+crewai>=0.30.0
+crewai-tools>=0.1.0
+langchain>=0.1.0
+langchain-openai>=0.0.5
+
+# Redis for state management (optional)
+redis>=5.0.0

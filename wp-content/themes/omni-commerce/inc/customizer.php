@@ -23,7 +23,7 @@ function omni_commerce_customize_register( $wp_customize ) {
 
     // Address
     $wp_customize->add_setting( 'omni_commerce_address', array(
-        'default'           => 'Số 41 Khuất Duy Tiến, Thanh Xuân, Hà Nội',
+        'default'           => 'Số 65 Hồ Ba Mẫu, Đống Đa, Hà Nội',
         'sanitize_callback' => 'sanitize_text_field',
     ) );
     $wp_customize->add_control( 'omni_commerce_address', array(

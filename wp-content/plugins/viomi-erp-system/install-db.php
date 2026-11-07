@@ -1,11 +1,20 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+/**
+ * Script khởi tạo DB nội bộ cho ERP System.
+ * Bắt buộc kiểm tra quyền Administrator để ngăn chặn truy cập trái phép.
+ */
+if ( ! defined( 'ABSPATH' ) ) {
+    require_once dirname( dirname( dirname( dirname( __FILE__ ) ) ) ) . '/wp-load.php';
+}
+
+if ( ! current_user_can( 'manage_options' ) && ( ! defined( 'WP_CLI' ) || ! WP_CLI ) ) {
+    wp_die( esc_html__( 'Bạn không có quyền truy cập trang này.', 'mi-erp-system' ), 403 );
+}
+
 try {
-    require_once '../../../wp-load.php';
-    require_once 'mi-erp-system.php';
+    require_once dirname( __FILE__ ) . '/includes/class-mi-erp-installer.php';
     Mi_ERP_Installer::install();
     echo 'Install OK';
-} catch (Throwable $e) {
-    echo $e->getMessage();
+} catch ( Throwable $e ) {
+    echo esc_html( $e->getMessage() );
 }

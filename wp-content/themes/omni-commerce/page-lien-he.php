@@ -67,15 +67,18 @@ get_header();
 $address = function_exists('get_field') ? get_field('mi_hf_topbar_address', 'option') : '';
 $address = $address ?: 'Số 41 Khuất Duy Tiến, Thanh Xuân, Hà Nội';
 
-$hotline = function_exists('get_field') ? get_field('mi_hotline_number', 'option') : '';
+$hotline = function_exists('get_field') ? get_field('mi_hf_topbar_hotline', 'option') : '';
 $hotline = $hotline ?: '0822.83.4444';
 
-$zalo_url = function_exists('get_field') ? get_field('mi_hf_fab_zalo', 'option') : '#';
-$messenger_url = function_exists('get_field') ? get_field('mi_hf_fab_messenger', 'option') : '#';
-$contact_intro = 'Nếu bạn có bất kỳ thắc mắc nào về sản phẩm, dịch vụ hoặc cần hỗ trợ bảo hành, đừng ngần ngại liên hệ với Xiaomi Store. Đội ngũ của chúng tôi luôn sẵn sàng hỗ trợ bạn 24/7.';
+$zalo_url = function_exists('get_field') ? get_field('mi_hf_fab_zalo', 'option') : '';
+$zalo_url = ! empty( $zalo_url ) ? $zalo_url : 'https://zalo.me/' . str_replace([' ', '.'], '', $hotline);
+
+$messenger_url = function_exists('get_field') ? get_field('mi_hf_fab_messenger', 'option') : '';
+$messenger_url = ! empty( $messenger_url ) ? $messenger_url : 'tel:' . str_replace([' ', '.'], '', $hotline);
+$contact_intro = 'Nếu bạn có bất kỳ thắc mắc nào về sản phẩm, dịch vụ hoặc cần hỗ trợ bảo hành, đừng ngần ngại liên hệ với TongKhoMi.com. Đội ngũ của chúng tôi luôn sẵn sàng hỗ trợ bạn 24/7.';
 ?>
 
-<main id="primary" class="max-w-[1440px] mx-auto px-4 py-6 lg:py-12">
+<main id="primary" class="max-w-[1440px] mx-auto px-2.5 sm:px-4 py-4 sm:py-6 lg:py-12">
     
     <!-- Tiêu đề trang -->
     <div class="mb-8 lg:mb-10 text-center">
@@ -102,23 +105,27 @@ $contact_intro = 'Nếu bạn có bất kỳ thắc mắc nào về sản phẩm
     </div>
 
     <!-- Bố cục 2 cột -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12">
         
         <!-- Cột Trái: Thông tin & Bản đồ -->
         <div class="flex flex-col gap-6 lg:gap-8">
             
             <!-- Box Thông tin -->
-            <div class="bg-white p-5 lg:p-6 rounded-2xl border border-slate-200 shadow-[0_12px_28px_-20px_rgba(15,23,42,0.28)]">
+            <div class="bg-white p-4 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl border border-slate-200 shadow-[0_12px_28px_-20px_rgba(15,23,42,0.28)]">
                 <h2 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-200 pb-3">Thông Tin Liên Hệ</h2>
                 
                 <div class="flex flex-col gap-5">
                     <div class="flex items-start gap-4">
                         <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                            <span class="material-symbols-outlined">location_on</span>
+                            <span class="material-symbols-outlined">storefront</span>
                         </div>
-                        <div>
-                            <h3 class="font-bold text-gray-800 mb-1">Địa chỉ Showroom</h3>
-                            <p class="text-gray-600 text-sm"><?php echo esc_html($address); ?></p>
+                        <div class="space-y-3">
+                            <h3 class="font-bold text-gray-800 mb-1">Hệ Thống Trụ Sở &amp; Kho Hàng</h3>
+                            <div class="text-sm text-gray-600 space-y-2">
+                                <p><strong>1. Trụ sở &amp; Showroom Đống Đa:</strong><br/>Số 65 Hồ Ba Mẫu, Phường Phương Liên, Quận Đống Đa, Hà Nội</p>
+                                <p><strong>2. Cơ sở Văn Quán - Hà Đông:</strong><br/>Khu Sân bóng Hồ Văn Quán, Đường 19/5, KĐT Văn Quán, Quận Hà Đông, Hà Nội</p>
+                                <p><strong>3. Tổng Kho Cảng Hà Nội - Hai Bà Trưng:</strong><br/>Kho 86, Cảng Hà Nội, Số 838 Bạch Đằng, Phường Thanh Lương, Quận Hai Bà Trưng, Hà Nội</p>
+                            </div>
                         </div>
                     </div>
                     
@@ -159,8 +166,19 @@ $contact_intro = 'Nếu bạn có bất kỳ thắc mắc nào về sản phẩm
                 <?php
                 $map_iframe = function_exists('get_field') ? get_field('mi_contact_map_iframe', 'option') : '';
                 if ( ! empty( $map_iframe ) ) {
-                    // Cho phép render mã nhúng iframe hợp lệ
-                    echo $map_iframe;
+                    // Cho phép render mã nhúng iframe hợp lệ đã được sanitize
+                    echo wp_kses( $map_iframe, array(
+                        'iframe' => array(
+                            'src'             => array(),
+                            'width'           => array(),
+                            'height'          => array(),
+                            'style'           => array(),
+                            'allowfullscreen' => array(),
+                            'loading'         => array(),
+                            'referrerpolicy'  => array(),
+                            'frameborder'     => array(),
+                        ),
+                    ) );
                 } else {
                 ?>
                 <!-- Fallback Map nếu chưa cấu hình ACF -->
@@ -171,7 +189,7 @@ $contact_intro = 'Nếu bạn có bất kỳ thắc mắc nào về sản phẩm
         </div>
 
         <!-- Cột Phải: Form Liên Hệ -->
-        <div class="bg-white p-5 lg:p-8 rounded-2xl border border-slate-200 shadow-[0_12px_28px_-20px_rgba(15,23,42,0.28)] h-fit">
+        <div class="bg-white p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl border border-slate-200 shadow-[0_12px_28px_-20px_rgba(15,23,42,0.28)] h-fit">
             <h2 class="text-xl lg:text-2xl font-black text-slate-800 mb-2">Gửi Tin Nhắn Cho Chúng Tôi</h2>
             <p class="text-slate-500 text-sm mb-6 leading-relaxed">Vui lòng điền thông tin vào mẫu bên dưới, chúng tôi sẽ phản hồi sớm nhất có thể.</p>
 

@@ -27,7 +27,7 @@ function omni_commerce_defer_scripts( $tag, $handle, $src ) {
  * Cải thiện bộ nhớ cache (Caching) cho tài nguyên tĩnh
  */
 function omni_commerce_remove_script_version( $src ) {
-    if ( strpos( $src, 'tailwind.css' ) !== false ) {
+    if ( strpos( $src, 'tailwind.css' ) !== false || strpos( $src, 'style.css' ) !== false ) {
         return $src;
     }
     if ( strpos( $src, '?ver=' ) ) {

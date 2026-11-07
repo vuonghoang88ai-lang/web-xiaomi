@@ -7,7 +7,6 @@ class Mi_ERP_Procurement_Ajax {
     public function __construct() {
         add_action( 'wp_ajax_mi_erp_load_procurement', array( $this, 'load_procurement_data' ) );
         add_action( 'wp_ajax_mi_erp_add_supplier', array( $this, 'add_supplier' ) );
-        add_action( 'wp_ajax_mi_erp_add_supplier', array( $this, 'add_supplier' ) );
         add_action( 'wp_ajax_mi_erp_add_po', array( $this, 'add_po' ) );
         add_action( 'wp_ajax_mi_erp_update_po_status', array( $this, 'update_po_status' ) );
     }
@@ -163,6 +162,9 @@ class Mi_ERP_Procurement_Ajax {
             
             $serial_table = $wpdb->prefix . 'mi_serials';
             $trans_table = $wpdb->prefix . 'mi_inventory_transactions';
+            $wh_table = $wpdb->prefix . 'mi_warehouses';
+            $default_wh_id = $wpdb->get_var( "SELECT id FROM $wh_table WHERE status = 'active' ORDER BY id ASC LIMIT 1" );
+            $target_warehouse_id = $default_wh_id ? intval( $default_wh_id ) : 2;
             
             foreach ( $items as $item ) {
                 for ( $i = 1; $i <= $item->quantity; $i++ ) {
@@ -173,7 +175,7 @@ class Mi_ERP_Procurement_Ajax {
                         'product_id' => $item->product_id,
                         'serial_number' => $generated_serial,
                         'status' => 'in_stock',
-                        'warehouse_id' => 1 // Kho mặc định
+                        'warehouse_id' => $target_warehouse_id // Kho mặc định đang kích hoạt
                     ) );
                     
                     $serial_id = $wpdb->insert_id;

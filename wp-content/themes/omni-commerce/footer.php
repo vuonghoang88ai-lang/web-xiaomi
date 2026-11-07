@@ -1,12 +1,13 @@
+<?php
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Exit if accessed directly.
+}
+?>
 <footer class="bg-white">
 <!-- Pre-Footer -->
 <div class="bg-surface-container-low py-6 md:py-10 px-4">
     <div class="max-w-[1440px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
         <?php
-if ( ! defined( 'ABSPATH' ) ) {
-	exit; // Exit if accessed directly.
-}
- 
         $trust_badges = get_field('mi_trust_badges', 'option');
         if ($trust_badges) : 
             foreach ($trust_badges as $badge) : 
@@ -51,16 +52,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 </div>
 <!-- Main Footer -->
 <?php
-$footer_about = get_field('mi_hf_footer_about', 'option') ?: 'Chúng tôi là hệ thống phân phối các sản phẩm Xiaomi chính hãng hàng đầu tại Việt Nam, cam kết chất lượng và dịch vụ tốt nhất.';
+$footer_about = get_field('mi_hf_footer_about', 'option') ?: 'TongKhoMi.com là hệ thống tổng kho phân phối các thiết bị công nghệ Xiaomi chính hãng hàng đầu tại Việt Nam, cam kết 100% sản phẩm nguyên seal, giá gốc tổng kho và bảo hành uy tín toàn quốc.';
 $footer_fb = get_field('mi_hf_footer_facebook_html', 'option');
 $footer_showrooms = get_field('mi_hf_footer_showrooms', 'option');
-$footer_copyright = get_field('mi_hf_footer_copyright', 'option') ?: '© 2024 Xiaomi Store. All Rights Reserved. Thiết kế và vận hành bởi Xiaomi Store Vietnam.';
+$footer_copyright = get_field('mi_hf_footer_copyright', 'option') ?: '© ' . date('Y') . ' TongKhoMi.com. All Rights Reserved. Hệ thống Tổng Kho Xiaomi Chính Hãng.';
 $footer_payment_icons = get_field('mi_hf_footer_payment_icons', 'option');
 $footer_certificate = get_field('mi_hf_footer_certificate', 'option');
 ?>
 <div class="max-w-[1440px] mx-auto px-4 py-8 md:py-16 grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12">
     <div class="flex flex-col h-full">
-        <h3 class="font-bold text-primary mb-4 md:mb-6 uppercase"><?php esc_html_e( 'Về Xiaomi Store', 'omni-commerce' ); ?></h3>
+        <div class="mb-4">
+            <picture>
+                <source srcset="<?php echo esc_url( get_theme_file_uri( '/assets/images/tongkhomi-logo.webp' ) ); ?>" type="image/webp" />
+                <img src="<?php echo esc_url( get_theme_file_uri( '/assets/images/tongkhomi-logo.png' ) ); ?>" alt="TongKhoMi.com" class="h-12 w-auto object-contain" width="150" height="48" loading="lazy" />
+            </picture>
+        </div>
         <p class="text-body-md text-outline mb-4"><?php echo esc_html($footer_about); ?></p>
         <div class="flex gap-3 mt-auto">
             <?php 
@@ -91,10 +97,10 @@ $footer_certificate = get_field('mi_hf_footer_certificate', 'option');
             // Fallback
         ?>
         <ul class="flex flex-col gap-3 text-body-md text-outline">
-            <li><a class="hover:text-primary transition-colors" href="#">Chính sách bảo mật</a></li>
-            <li><a class="hover:text-primary transition-colors" href="#">Chính sách bảo hành</a></li>
-            <li><a class="hover:text-primary transition-colors" href="#">Chính sách đổi trả</a></li>
-            <li><a class="hover:text-primary transition-colors" href="#">Chính sách vận chuyển</a></li>
+            <li><a class="hover:text-primary transition-colors" href="<?php echo esc_url( mi_get_page_url( 'chinh-sach-bao-mat' ) ); ?>">Chính sách bảo mật</a></li>
+            <li><a class="hover:text-primary transition-colors" href="<?php echo esc_url( mi_get_page_url( 'chinh-sach-bao-hanh' ) ); ?>">Chính sách bảo hành</a></li>
+            <li><a class="hover:text-primary transition-colors" href="<?php echo esc_url( mi_get_page_url( 'chinh-sach-doi-tra' ) ); ?>">Chính sách đổi trả</a></li>
+            <li><a class="hover:text-primary transition-colors" href="<?php echo esc_url( mi_get_page_url( 'chinh-sach-van-chuyen' ) ); ?>">Chính sách vận chuyển</a></li>
         </ul>
         <?php } ?>
     </div>
@@ -103,11 +109,28 @@ $footer_certificate = get_field('mi_hf_footer_certificate', 'option');
         <h3 class="font-bold text-primary mb-4 md:mb-6 uppercase"><?php esc_html_e( 'Fanpage Facebook', 'omni-commerce' ); ?></h3>
         <?php if ($footer_fb): ?>
             <div class="w-full overflow-hidden rounded-lg">
-                <?php echo $footer_fb; // Output raw HTML for iframe ?>
+                <?php
+                echo wp_kses( $footer_fb, array(
+                    'iframe' => array(
+                        'src'             => array(),
+                        'width'           => array(),
+                        'height'          => array(),
+                        'style'           => array(),
+                        'scrolling'       => array(),
+                        'frameborder'     => array(),
+                        'allowfullscreen' => array(),
+                        'allow'           => array(),
+                    ),
+                    'div'    => array(
+                        'class' => array(),
+                        'style' => array(),
+                    ),
+                ) );
+                ?>
             </div>
         <?php else: ?>
             <div class="w-full overflow-hidden rounded-lg bg-white shadow-sm border border-outline-variant flex justify-center">
-                <iframe src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2FXiaomiVietnam&tabs=timeline&width=300&height=214&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true&appId" width="300" height="214" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>
+                <iframe src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2FXiaomiVietnam&tabs=timeline&width=300&height=214&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=false" width="300" height="214" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" loading="lazy" title="Facebook Fanpage"></iframe>
             </div>
         <?php endif; ?>
     </div>
@@ -141,7 +164,7 @@ $footer_certificate = get_field('mi_hf_footer_certificate', 'option');
         <?php if ($footer_certificate): ?>
             <img class="h-12 w-auto object-contain mt-auto" alt="Chứng nhận" src="<?php echo esc_url($footer_certificate); ?>" loading="lazy" />
         <?php else: ?>
-            <img class="h-12 w-auto object-contain mt-auto" alt="Chứng nhận Bộ Công Thương" src="https://bizweb.dktcdn.net/100/342/645/themes/701297/assets/bct.png" loading="lazy" />
+            <img class="h-12 w-auto object-contain mt-auto" alt="<?php esc_attr_e( 'Chứng nhận Bộ Công Thương', 'omni-commerce' ); ?>" src="<?php echo esc_url( get_template_directory_uri() . '/assets/images/bct.svg' ); ?>" loading="lazy" />
         <?php endif; ?>
     </div>
 </div>
@@ -165,16 +188,16 @@ $footer_certificate = get_field('mi_hf_footer_certificate', 'option');
         else: 
         ?>
             <div>
-                <h4 class="font-bold text-tertiary-fixed mb-2 uppercase">Showroom Thanh Xuân</h4>
-                <p class="text-label-sm leading-relaxed">Số 41 Khuất Duy Tiến, Thanh Xuân Bắc, Hà Nội<br/>Hotline: 0822.83.4444</p>
+                <h4 class="font-bold text-tertiary-fixed mb-2 uppercase">Trụ Sở &amp; Showroom Đống Đa</h4>
+                <p class="text-label-sm leading-relaxed">Số 65 Hồ Ba Mẫu, Phường Phương Liên, Quận Đống Đa, Hà Nội<br/>Hotline: 0822.83.4444</p>
             </div>
             <div>
-                <h4 class="font-bold text-tertiary-fixed mb-2 uppercase">Showroom Long Biên</h4>
-                <p class="text-label-sm leading-relaxed">Số 123 Nguyễn Văn Cừ, Ngọc Lâm, Hà Nội<br/>Hotline: 0822.83.5555</p>
+                <h4 class="font-bold text-tertiary-fixed mb-2 uppercase">Cơ Sở Văn Quán - Hà Đông</h4>
+                <p class="text-label-sm leading-relaxed">Khu Sân bóng Hồ Văn Quán, Đường 19/5, KĐT Văn Quán, Quận Hà Đông, Hà Nội<br/>Hotline: 0822.83.4444</p>
             </div>
             <div>
-                <h4 class="font-bold text-tertiary-fixed mb-2 uppercase">Showroom Cầu Giấy</h4>
-                <p class="text-label-sm leading-relaxed">Số 88 Xuân Thủy, Dịch Vọng Hậu, Hà Nội<br/>Hotline: 0822.83.6666</p>
+                <h4 class="font-bold text-tertiary-fixed mb-2 uppercase">Tổng Kho Cảng Hà Nội - Hai Bà Trưng</h4>
+                <p class="text-label-sm leading-relaxed">Kho 86, Cảng Hà Nội, Số 838 Bạch Đằng, Phường Thanh Lương, Quận Hai Bà Trưng, Hà Nội<br/>Hotline: 0822.83.4444</p>
             </div>
         <?php endif; ?>
     </div>
@@ -224,7 +247,7 @@ $fab_showroom = home_url('/lien-he/');
         </a>
 
         <!-- Hotline (Prominent) -->
-        <a href="tel:<?php echo esc_attr(str_replace([' ', '.'], '', $fab_hotline)); ?>" class="flex items-center justify-center gap-2 text-white px-5 py-3 md:py-3 rounded-full md:shadow-lg group hover:scale-105 transition-transform order-first md:order-last w-full md:w-auto" style="background-color: #e60012;">
+        <a href="tel:<?php echo esc_attr(str_replace([' ', '.'], '', $fab_hotline)); ?>" class="flex items-center justify-center gap-2 text-white px-5 py-3 md:py-3 rounded-full md:shadow-lg group hover:scale-105 transition-transform order-first md:order-last flex-1 md:flex-none md:w-auto shrink-0" style="background-color: #e60012;">
             <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">call</span>
             <span class="text-sm font-bold uppercase whitespace-nowrap"><?php esc_html_e( 'Gọi Hotline', 'omni-commerce' ); ?></span>
         </a>

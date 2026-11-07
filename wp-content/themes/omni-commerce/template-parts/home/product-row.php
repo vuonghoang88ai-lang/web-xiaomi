@@ -47,11 +47,13 @@ if (empty($cat_title)) $cat_title = 'Sản phẩm Xiaomi';
 if (empty($cat_link) || is_wp_error($cat_link)) $cat_link = '#';
 if ($banner_btn_link === '#' && $cat_link !== '#') $banner_btn_link = $cat_link;
 
-// Resolve banner image if not set
-if (empty($banner_img) && $term_id) {
-    $thumb_id = get_term_meta($term_id, 'thumbnail_id', true);
-    if ($thumb_id) {
-        $banner_img = wp_get_attachment_url($thumb_id);
+// Resolve banner image if not set or if it is an old placeholder
+if ( empty( $banner_img ) || stripos( $banner_img, 'placehold.co' ) !== false ) {
+    if ( $term_id ) {
+        $thumb_id = get_term_meta( $term_id, 'thumbnail_id', true );
+        if ( $thumb_id ) {
+            $banner_img = wp_get_attachment_url( $thumb_id );
+        }
     }
 }
 
@@ -62,8 +64,8 @@ if (!$banner_title) {
 if (!$banner_desc) {
     $banner_desc = "Khám phá các sản phẩm chính hãng Xiaomi tốt nhất";
 }
-if (!$banner_img) {
-    $banner_img = "https://lh3.googleusercontent.com/aida-public/AB6AXuCZoT_h2iJ6lG4pVOknKHLQUwhNBH2H6nRtAhTFrCRZCk187XpzgEPOfLCjeyGlXEkQuETQ8_5MjxHaRcSRaAfKMg0yXkX5K7l2gWDQtrjY7cRHeb0_SWiUrk4auPRh5Ha7X64B9Ns_aYF3hG_fF-DLBKx1bhk7tLgKKHSokDFFTWCJtLT2p5mBLpoYZ61oFy19uVZeL2_ns_x7Grq7b4FoURJaqr-95lnvtldUMFhuqEJO8OOfZ4o0";
+if ( empty( $banner_img ) || stripos( $banner_img, 'placehold.co' ) !== false ) {
+    $banner_img = content_url( 'uploads/banners/left-col-tivi.jpg' );
 }
 ?>
 <!-- 4. Product Sections -->
@@ -74,18 +76,18 @@ if (!$banner_img) {
             <a class="text-primary font-bold text-[13px] flex items-center gap-1 hover:underline" href="<?php echo esc_url($cat_link); ?>">Xem tất cả <span class="material-symbols-outlined text-[18px]">chevron_right</span></a>
         </div>
         <div class="flex flex-col lg:flex-row gap-5">
-            <!-- Left Split: Vertical Banner -->
-            <div class="lg:w-1/5 bg-gradient-to-br <?php echo esc_attr($banner_bg_color); ?> rounded-3xl p-4 flex flex-col items-center text-center shadow-[0_16px_28px_-18px_rgba(15,23,42,0.28)] min-h-[160px] lg:min-h-[340px] border border-white/20">
+            <!-- Left Split: Vertical Banner (Desktop Only: >= 900px) -->
+            <div class="mi-product-row-banner lg:w-1/5 bg-gradient-to-br <?php echo esc_attr($banner_bg_color); ?> rounded-3xl p-4 flex flex-col items-center text-center shadow-[0_16px_28px_-18px_rgba(15,23,42,0.28)] min-h-[160px] lg:min-h-[340px] border border-white/20">
                 <div class="text-[22px] font-black text-primary leading-tight mt-3 uppercase"><?php echo wp_kses_post($banner_title); ?></div>
                 <p class="mt-3 text-sm font-medium text-tertiary"><?php echo esc_html($banner_desc); ?></p>
-                <div class="mt-4 lg:mt-6 size-16 lg:size-28 hidden md:block">
-                    <img loading="lazy" class="w-full h-full object-contain" src="<?php echo esc_url($banner_img); ?>" alt="<?php echo esc_attr(strip_tags($banner_title)); ?>"/>
+                <div class="my-auto py-3 w-full flex items-center justify-center">
+                    <img loading="lazy" class="max-h-[140px] lg:max-h-[180px] w-auto max-w-[85%] object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.25)] hover:scale-105 transition-transform duration-300" src="<?php echo esc_url($banner_img); ?>" alt="<?php echo esc_attr(strip_tags($banner_title)); ?>" width="200" height="180"/>
                 </div>
                 <a href="<?php echo esc_url($banner_btn_link); ?>" class="mt-auto bg-primary text-white px-6 py-2.5 rounded-full font-bold shadow-sm hover:bg-surface-tint transition-all active:scale-95 inline-block text-sm"><?php echo esc_html($banner_btn_text); ?></a>
             </div>
             
-            <!-- Right Split: Product Grid -->
-            <div class="lg:w-4/5 grid grid-cols-2 md:grid-cols-4 gap-3">
+            <!-- Right Split: Product Grid (Full-width on Mobile, 4/5 on Desktop) -->
+            <div class="w-full lg:w-4/5 grid grid-cols-2 md:grid-cols-4 gap-3">
                 <?php
                 $products_query = null;
 
@@ -116,13 +118,42 @@ if (!$banner_img) {
                 if ($products_query->have_posts()):
                     while ($products_query->have_posts()): $products_query->the_post();
                         global $product;
-                        $rating_count = $product->get_rating_count();
+                        $rating_count   = $product->get_rating_count();
                         $average_rating = $product->get_average_rating();
+                        $is_variable    = $product->is_type( 'variable' );
+
+                        if ( $is_variable ) {
+                            $regular_price = (float) $product->get_variation_regular_price( 'max', true );
+                            $sale_price    = (float) $product->get_variation_sale_price( 'min', true );
+                            if ( $sale_price <= 0 ) {
+                                $sale_price = (float) $product->get_variation_price( 'min', true );
+                            }
+                        } else {
+                            $regular_price = (float) $product->get_regular_price();
+                            $sale_price    = (float) $product->get_sale_price();
+                            if ( $sale_price <= 0 ) {
+                                $sale_price = (float) $product->get_price();
+                            }
+                        }
+
+                        $is_on_sale = $product->is_on_sale() && $sale_price > 0 && $regular_price > $sale_price;
+                        $discount_percent = 0;
+                        if ( $is_on_sale && $regular_price > 0 ) {
+                            $discount_percent = round( ( ( $regular_price - $sale_price ) / $regular_price ) * 100 );
+                        }
+
+                        $total_sales = (int) get_post_meta( $product->get_id(), 'total_sales', true );
+                        $formatted_sales = $total_sales;
+                        if ( $total_sales >= 1000 ) {
+                            $formatted_sales = round( $total_sales / 1000, 1 ) . 'k';
+                        }
                         ?>
-                        <div class="product-card bg-white p-3 rounded-2xl border border-slate-200 relative flex flex-col transition-all cursor-pointer group hover:-translate-y-1 hover:shadow-[0_14px_28px_-10px_rgba(15,23,42,0.2)] h-fit self-start md:h-full md:self-auto">
+                        <div class="product-card bg-white p-2.5 sm:p-3 rounded-2xl border border-slate-200 relative flex flex-col transition-all cursor-pointer group hover:-translate-y-1 hover:shadow-[0_14px_28px_-10px_rgba(15,23,42,0.2)] h-fit self-start md:h-full md:self-auto w-full min-w-0 overflow-hidden">
                             
-                            <?php if ( $product->is_on_sale() ) : ?>
-                                <span class="absolute top-2 right-2 bg-secondary text-white text-[10px] font-bold px-2 py-1 rounded-full z-10">SALE</span>
+                            <?php if ( $is_on_sale ) : ?>
+                                <span class="absolute top-2 right-2 bg-secondary text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-10 shadow-sm">
+                                    <?php echo $discount_percent > 0 ? '-' . esc_html( $discount_percent ) . '%' : 'SALE'; ?>
+                                </span>
                             <?php endif; ?>
 
                             <?php if ( $product->is_featured() ) : ?>
@@ -130,12 +161,8 @@ if (!$banner_img) {
                             <?php endif; ?>
 
                             <a href="<?php echo esc_url( get_permalink() ); ?>" class="block aspect-square w-full mb-3 relative overflow-hidden rounded-xl bg-slate-50">
-                                <?php 
-                                if ( has_post_thumbnail() ) {
-                                    echo get_the_post_thumbnail( get_the_ID(), 'woocommerce_thumbnail', [ 'class' => 'w-full h-full object-contain group-hover:scale-105 transition-transform duration-300 mix-blend-multiply' ] );
-                                } else {
-                                    echo '<img loading="lazy" class="w-full h-full object-contain" src="' . esc_url( get_template_directory_uri() . '/assets/img/placeholder.jpg' ) . '" alt="Placeholder"/>';
-                                }
+                                <?php
+                                echo mi_safe_product_thumbnail( get_the_ID(), 'woocommerce_thumbnail', [ 'class' => 'w-full h-full object-contain group-hover:scale-105 transition-transform duration-300 mix-blend-multiply', 'loading' => 'lazy' ] );
                                 ?>
                             </a>
                             
@@ -143,33 +170,54 @@ if (!$banner_img) {
                                 <h3 class="text-[13px] font-bold text-slate-800 line-clamp-2 min-h-[38px] leading-[1.4] group-hover:text-primary transition-colors"><?php echo esc_html( get_the_title() ); ?></h3>
                             </a>
                             
-                            <div class="mt-2 text-secondary font-black text-body-lg flex items-baseline gap-2 flex-wrap">
-                                <?php 
-                                if ( $product->is_type('variable') ) {
-                                    $min_regular = $product->get_variation_regular_price('min', true);
-                                    $min_sale = $product->get_variation_sale_price('min', true);
-                                    
-                                    if ( $product->is_on_sale() && $min_sale < $min_regular ) {
-                                        echo '<del aria-hidden="true" class="text-outline text-body-sm font-normal mr-2">' . wp_kses_post( wc_price( $min_regular ) ) . '</del>';
-                                        echo '<ins aria-hidden="true" class="no-underline">' . wp_kses_post( wc_price( $min_sale ) ) . '</ins>';
-                                    } else {
-                                        echo $min_regular > 0 ? wp_kses_post( wc_price( $min_regular ) ) : esc_html__( 'Liên hệ', 'omni-commerce' );
-                                    }
-                                } else {
+                            <!-- Khối giá: .pc-price-row đảm bảo flex-col mobile / flex-row desktop qua @media CSS -->
+                            <div class="pc-price-row mt-2">
+                                <?php if ( $is_on_sale ) : ?>
+                                    <!-- 1. Giá KM: nổi bật, đỏ, to -->
+                                    <span class="text-secondary font-black text-sm xl:text-base tracking-tight whitespace-nowrap">
+                                        <?php echo wp_kses_post( wc_price( $sale_price ) ); ?>
+                                    </span>
+                                    <!-- 2. Giá gốc + Badge -->
+                                    <span class="flex items-center gap-1 flex-wrap">
+                                        <span class="text-slate-400 line-through text-[11px] xl:text-xs font-normal whitespace-nowrap">
+                                            <?php echo wp_kses_post( wc_price( $regular_price ) ); ?>
+                                        </span>
+                                        <?php if ( $discount_percent > 0 ) : ?>
+                                            <span class="text-secondary bg-red-50 border border-secondary/20 text-[9px] xl:text-[10px] font-bold px-1.5 py-0.5 rounded leading-none">
+                                                -<?php echo esc_html( $discount_percent ); ?>%
+                                            </span>
+                                        <?php endif; ?>
+                                    </span>
+                                <?php else : ?>
+                                    <?php 
                                     $price = $product->get_price();
-                                    echo $price > 0 ? wp_kses_post( $product->get_price_html() ) : esc_html__( 'Liên hệ', 'omni-commerce' );
-                                }
-                                ?>
+                                    if ( $price !== '' && (float) $price > 0 ) : 
+                                    ?>
+                                        <span class="text-secondary font-black text-sm xl:text-base tracking-tight whitespace-nowrap">
+                                            <?php echo wp_kses_post( wc_price( $price ) ); ?>
+                                        </span>
+                                    <?php else : ?>
+                                        <span class="text-secondary font-bold text-xs whitespace-nowrap">
+                                            <?php esc_html_e( 'Liên hệ', 'omni-commerce' ); ?>
+                                        </span>
+                                    <?php endif; ?>
+                                <?php endif; ?>
                             </div>
                             
-                            <div class="mt-2 flex items-center text-xiaomi-yellow">
-                                <?php 
-                                for ( $i = 1; $i <= 5; $i++ ) {
-                                    $fill = ( $i <= round( $average_rating ) ) ? '1' : '0';
-                                    echo '<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: \'FILL\' ' . $fill . ';">star</span>';
-                                }
-                                ?>
-                                <span class="text-outline text-label-sm ml-1">(<?php echo esc_html( $rating_count ?: 0 ); ?>)</span>
+                            <!-- Hàng sao & Đã bán: .pc-meta-row đảm bảo flex-col mobile / space-between desktop -->
+                            <div class="pc-meta-row mt-auto pt-2 border-t border-slate-100">
+                                <div class="flex items-center text-xiaomi-yellow">
+                                    <?php 
+                                    for ( $i = 1; $i <= 5; $i++ ) {
+                                        $fill = ( $i <= round( $average_rating ) ) ? '1' : '0';
+                                        echo '<span class="material-symbols-outlined text-[12px] xl:text-[13px]" style="font-variation-settings: \'FILL\' ' . $fill . ';">star</span>';
+                                    }
+                                    ?>
+                                    <span class="text-slate-400 text-[9px] xl:text-[10px] ml-0.5 font-medium">(<?php echo esc_html( $rating_count ); ?>)</span>
+                                </div>
+                                <span class="text-slate-500 font-medium text-[9px] xl:text-[10px] whitespace-nowrap">
+                                    <?php echo esc_html__( 'Đã bán', 'omni-commerce' ) . ' ' . esc_html( $formatted_sales ); ?>
+                                </span>
                             </div>
 
 

@@ -3,13 +3,15 @@
 ## Kiến trúc Docker
 Toàn bộ hệ thống chạy 100% trong Docker containers:
 
-| Service | Container |
-|---------|----------|
-| WordPress + PHP | `michinhhang-wordpress-1` (hoặc tên tương tự) |
-| MariaDB | `michinhhang-db-1` |
-| Redis | `michinhhang-redis-1` |
+| Service | Container / Process | Cổng / Môi Trường |
+|---------|---------------------|-------------------|
+| WordPress + PHP | `michinhhang-wordpress-1` | Port 8080 (Docker) |
+| MariaDB | `michinhhang-db-1` | Port 3306 (Docker) |
+| Redis Cache | `michinhhang-redis-1` | Port 6379 (Docker) |
+| CrewAI Enterprise | `crewai-service` | Port 8000 (FastAPI Host / Bridge `172.18.0.1:8000`) |
+| Graph Memory Service | `graph-memory` | Port 3000 (Docker Compose Profile: `dev`) |
 
-Máy chủ Ubuntu host **KHÔNG** cài PHP, WP-CLI, MySQL, Composer ở môi trường ngoài.
+Máy chủ Ubuntu host **KHÔNG** cài PHP, WP-CLI, MySQL, Composer ở môi trường ngoài. Mọi thao tác quản trị WordPress được thực thi qua `docker exec`.
 
 ---
 
@@ -74,13 +76,16 @@ Nếu lệnh trên chạy thành công, WordPress có quyền ghi vào uploads. 
 
 ---
 
-## Compile Tailwind CSS
+## Compile Tailwind CSS (Docker Environment)
 
-Bắt buộc chạy sau khi thêm hoặc sửa class Tailwind:
+Theo chính sách **không lưu file nhị phân lớn** trong Git Repo (BUG-018 / LESSON-08), file `tailwindcss-linux-x64` đã được loại bỏ. Mọi thao tác biên dịch CSS Tailwind bắt buộc thực hiện thông qua Docker container `node:20-alpine`:
+
 ```bash
-# Chạy từ thư mục theme
+# Đứng tại thư mục gốc của theme
 cd /home/ubuntu/michinhhang/wp-content/themes/omni-commerce
-./tailwindcss-linux-x64 -i ./src/input.css -o ./style.css --minify
+
+# Biên dịch CSS minified chuẩn production qua Docker
+docker run --rm -v $(pwd):/app -w /app node:20-alpine sh -c "npx tailwindcss -i ./src/input.css -o ./style.css --minify"
 ```
 
 > **Cảnh báo:** Nếu quên compile → class mới không sinh CSS → UI chết hoàn toàn, không có error message.
@@ -92,14 +97,17 @@ cd /home/ubuntu/michinhhang/wp-content/themes/omni-commerce
 
 ---
 
-## Enqueue Assets (functions.php)
+## Enqueue Assets (inc/theme-setup.php)
+
+Giao diện Omni-Commerce hoạt động độc lập (Standalone Classic Theme), tải CSS minified trực tiếp từ `style.css` (được build bởi Tailwind CLI):
 
 ```php
-// Thứ tự load (priority 20 trong wp_enqueue_scripts)
-wp_enqueue_style('astra-theme-css', '.../style.css');
-wp_enqueue_style('omni-commerce-css', get_stylesheet_uri(), ['astra-theme-css'], filemtime(...));
-wp_enqueue_style('tailwind-css',    '.../assets/css/tailwind.css');
-wp_enqueue_style('local-fonts',     '.../assets/css/fonts.css', [], null);
+// Tải CSS chính biên dịch từ Tailwind CLI
+wp_enqueue_style( 'omni-commerce-style', get_stylesheet_uri(), array(), $theme_version );
+
+// Tải bộ font cục bộ và widget core
+wp_enqueue_style( 'local-fonts', get_stylesheet_directory_uri() . '/assets/css/fonts.css', array(), null );
+wp_enqueue_style( 'omni-commerce-widgets-core', get_stylesheet_directory_uri() . '/assets/css/widgets-core.css', array(), $theme_version );
 ```
 
 ---

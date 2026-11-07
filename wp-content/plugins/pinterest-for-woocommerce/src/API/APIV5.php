@@ -18,6 +18,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * API V5 Methods
+ *
+ * @class   APIV5
+ * @version 1.6.0
  */
 class APIV5 extends Base {
 
@@ -153,8 +156,8 @@ class APIV5 extends Base {
 	 *
 	 * @param string $ad_account_id the advertiser_id to request the tags for.
 	 *
-	 * @return array {
-	 *      Tag objects list.
+	 * @return array|null {
+	 *      Tag objects list; null when the response body is empty.
 	 *
 	 *      @type array[] $items {
 	 *         Tag object.
@@ -408,11 +411,18 @@ class APIV5 extends Base {
 	 * @since 1.4.0
 	 */
 	public static function create_commerce_integration( array $integration_data ): array {
-		return self::make_request(
+		$response = self::make_request(
 			'integrations/commerce',
 			'POST',
 			$integration_data
 		);
+
+		// A 204 or other empty success has no integration to save; fail like an API error so the caller retries.
+		if ( ! is_array( $response ) ) {
+			throw new PinterestApiException( esc_html__( 'Empty commerce integration response.', 'pinterest-for-woocommerce' ), 204 );
+		}
+
+		return $response;
 	}
 
 	/**
@@ -574,8 +584,10 @@ class APIV5 extends Base {
 	 * Get merchant's feeds.
 	 *
 	 * @since 1.4.0
+	 * @since 1.6.0 Added the $bookmark parameter. Only the first page is cached.
 	 *
 	 * @param string $ad_account_id Pinterest Ad Account ID.
+	 * @param string $bookmark      Cursor of the page to fetch, from the previous page's bookmark. Empty for the first page.
 	 *
 	 * @return array {
 	 *      List of feeds.
@@ -610,13 +622,18 @@ class APIV5 extends Base {
 	 * }
 	 * @throws PinterestApiException If the request fails with 2xx status.
 	 */
-	public static function get_feeds( string $ad_account_id ): array {
+	public static function get_feeds( string $ad_account_id, string $bookmark = '' ): array {
+		$endpoint = "catalogs/feeds?ad_account_id={$ad_account_id}";
+		if ( '' !== $bookmark ) {
+			$endpoint .= '&bookmark=' . rawurlencode( $bookmark );
+		}
+
 		return self::make_request(
-			"catalogs/feeds?ad_account_id={$ad_account_id}",
+			$endpoint,
 			'GET',
 			array(),
 			'',
-			MINUTE_IN_SECONDS
+			'' === $bookmark ? MINUTE_IN_SECONDS : false
 		);
 	}
 

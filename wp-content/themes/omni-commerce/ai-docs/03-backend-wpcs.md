@@ -243,3 +243,14 @@ function mi_custom_woo_css() {
 - **Cơ chế thu thập khách hàng:** Sử dụng Modal Popup và AJAX thuần (vanilla JS) trên trang chi tiết sản phẩm.
 - **Tạo đơn hàng:** Dùng `wc_create_order()` để ghi lại trực tiếp vào hệ thống WooCommerce với status `on-hold`.
 - **Ghi chú đơn hàng:** Các thông tin phụ (CMND, Hộ khẩu, Thành phố) được lưu thẳng vào Order Note (`add_order_note()`) thay vì tạo trường Custom Meta (ACF), giúp Sale dễ dàng đọc ngay ở giao diện Order mặc định mà không cần chỉnh sửa admin panel.
+
+## 10. Tự động Tạo Dữ liệu Mẫu (Social Proof) khi Đăng Sản phẩm Mới
+- **Vị trí file:** [inc/woocommerce.php](inc/woocommerce.php)
+- **Hook kích hoạt:** `transition_post_status` khi `$new_status === 'publish'` và `$post->post_type === 'product'`.
+- **Cơ chế an toàn (Non-destructive):** Chỉ sinh số liệu nếu `total_sales` chưa từng tồn tại hoặc bằng rỗng. Nếu sản phẩm đã có dữ liệu bán (do đơn hàng thật hoặc admin set thủ công), hàm lập tức `return;` để bảo toàn dữ liệu.
+- **Quy tắc sinh số liệu tự nhiên:**
+  - `total_sales`: Random tự nhiên từ 68 đến 680 lượt bán (có 15% xác suất sản phẩm siêu hot đạt 1.050 - 1.680 để hiển thị dạng `1.2k` / `1.5k`).
+  - `_wc_average_rating`: Random điểm cao uy tín (`4.80`, `4.90`, `5.00`).
+  - `_wc_review_count`: Tương ứng tỉ lệ 8% - 14% theo số lượt bán (tối thiểu 12 reviews).
+  - `_wc_rating_count`: Mảng serialize phân bổ (khoảng 90% 5 sao, 10% 4 sao) để tương thích toàn diện với WooCommerce core.
+

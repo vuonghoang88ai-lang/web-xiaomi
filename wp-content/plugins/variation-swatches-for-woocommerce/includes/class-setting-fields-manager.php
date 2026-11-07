@@ -114,7 +114,7 @@ if ( ! class_exists( 'VSWC_Setting_Fields_Manager' ) ) {
 						'desc'           => __( 'Show the label for color swatches', 'wcvs' ),
 						'show_if_checked' => true,
 						'priority'       => 1.2,
-						'is_pro_feature' => true,
+						'pro_has_own_field' => true,
 					),
 					array(
 						'title'    => __( 'Enable Image Swatches', 'wcvs' ),
@@ -161,7 +161,28 @@ if ( ! class_exists( 'VSWC_Setting_Fields_Manager' ) ) {
 						'class'          => 'main-ajax-trigger',
 						'desc'           => __( 'Enable the Radio button type for Product Attributes', 'wcvs' ),
 						'priority'       => 1.5,
-						'is_pro_feature' => true,
+						'pro_has_own_field' => true,
+					),
+					array(
+						'title'           => __( 'Select Attributes', 'wcvs' ),
+						'fields'          => array(
+							array(
+								'id'   => 'wcvs-radio-swatches-attributes',
+								'type' => 'html',
+								'html' => TA_WC_Variation_Swatches::get_product_attributes_as_checkbox(
+									'general',
+									'',
+									'radio-swatches-attribute',
+									true,
+									'radio' )
+							)
+						),
+						'desc'            => __( 'Which attributes you want to enable the Radio button type?', 'wcvs' ),
+						'class'           => 'indent ajax-to-update',
+						'field_to_check'  => 'wcvs-enable-radio-swatches',
+						'show_if_checked' => true,
+						'priority'        => 1.6,
+						'pro_has_own_field' => true,
 					),
 					array(
 						'title'    => __( 'Auto Convert Dropdowns To Label', 'wcvs' ),

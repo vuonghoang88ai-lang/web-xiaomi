@@ -49,16 +49,17 @@ $sale_banner = get_field('mi_videos_sale_banner', 'option') ?: 'BIG SALE TIVI XI
         ];
         
         $fallback_images = [
-            'https://lh3.googleusercontent.com/aida-public/AB6AXuB8JxGNdYdbbCRM33s-AGrMffN258o6ql3LH2M13omqmnEvUxjfSt0Z7y-nFa7cn38NB0hevzY4_AJvrRzKdVr7jWJ3g-1q-ex1vrfg92AY54xFsKm15a4S2IlbjIxhkBYeqwPft8D7bRsSOj21K4AMde0gVzl1u3ruijBuHpeSrnwG_KR0n1PAeJCH3DNTMBa0ugEW8DdjfvvidctGJydnwkHpmbGosAxYFNEuuxYa4IhZJrD1wa7A',
-            'https://lh3.googleusercontent.com/aida-public/AB6AXuCIs-L5DExzC8oyn1oMd9YBr_iwppZZ2dDA1sd1r_v9wJSXjAmvs6ZiNQ6tki8QxSMjNGlN2Yuda39_c5Qdbw88UW7GYk9VDnQLZAVU2jcLDim9MsGsV-CIRpaDGFMAzosRtsvpBdHgDGdB0ubbLCjZ2-vXVQ6ua5L9avHUpm5iw0hplT9ZUxtNPjLgttmRYj_K8I7EslXsOgbx8c8fFbRyTU14Fl2r5xILfjgkelJTlFP6DYbvwf50',
-            'https://lh3.googleusercontent.com/aida-public/AB6AXuDbsRpSIuOZ95z0eBHH7-LSFglCHKenVpc45x-YeUECrwWhxdVNGflZecOFxcbX3SDdpnz6S1ugunI2ScQXO_JqiCzgH0B-n_UGE6oW4G20gZINx_GumK6JdFmktZrA0yOSqOmsFHnSh7AewSW0Be0lC5xzu0wGhBQRYPq1SpE2oPDtdeBQuwaPScqmaujTFI1gJxJiR36SGxahbthLPMnBnzAZIgUvzVbxHoduAjLJjX5WKIH5WH8B'
+            content_url( '/uploads/banners/banner-01-tivi.jpg' ),
+            content_url( '/uploads/banners/banner-02-tu-lanh.jpg' ),
+            content_url( '/uploads/banners/banner-03-gia-dinh.jpg' )
         ];
 
         foreach($video_ids as $index => $vid): 
             $img_url = $vid ? 'https://img.youtube.com/vi/' . esc_attr($vid) . '/maxresdefault.jpg' : $fallback_images[$index];
-            $href = $vid ? 'https://www.youtube.com/watch?v=' . esc_attr($vid) : '#';
+            $href = $vid ? 'https://www.youtube.com/watch?v=' . esc_attr($vid) : home_url( '/tin-tuc/' );
+            $target = $vid ? '_blank' : '_self';
         ?>
-        <a href="<?php echo esc_url($href); ?>" target="_blank" class="min-w-[85vw] md:min-w-0 snap-center shrink-0 relative aspect-video rounded-2xl overflow-hidden group shadow-sm border border-slate-100 block hover:shadow-md transition-shadow duration-300">
+        <a href="<?php echo esc_url($href); ?>" target="<?php echo esc_attr($target); ?>" aria-label="Xem video đánh giá trải nghiệm thiết bị Xiaomi" class="min-w-[85vw] md:min-w-0 snap-center shrink-0 relative aspect-video rounded-2xl overflow-hidden group shadow-sm border border-slate-100 block hover:shadow-md transition-shadow duration-300">
             <img loading="lazy" class="w-full h-full object-cover" src="<?php echo esc_url($img_url); ?>" alt="Video review"/>
             <div class="absolute inset-0 bg-black/20 flex items-center justify-center">
                 <div class="bg-secondary w-16 h-12 rounded-xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
@@ -82,7 +83,7 @@ $sale_banner = get_field('mi_videos_sale_banner', 'option') ?: 'BIG SALE TIVI XI
                     <span class="material-symbols-outlined text-[32px]"><?php echo esc_html($icon); ?></span>
                 </div>
                 <div>
-                    <h4 class="font-bold text-on-surface"><?php echo esc_html($title); ?></h4>
+                    <h3 class="font-bold text-on-surface"><?php echo esc_html($title); ?></h3>
                     <p class="text-label-sm text-outline"><?php echo esc_html($desc); ?></p>
                 </div>
             </div>
@@ -94,8 +95,8 @@ $sale_banner = get_field('mi_videos_sale_banner', 'option') ?: 'BIG SALE TIVI XI
                     <span class="material-symbols-outlined text-[32px]">shopping_cart_checkout</span>
                 </div>
                 <div>
-                    <h4 class="font-bold text-on-surface">Mua hàng dễ dàng</h4>
-                    <p class="text-label-sm text-outline">Thanh toán linh hoạt &amp; bảo mật</p>
+                    <h3 class="font-bold text-on-surface"><?php esc_html_e( 'Mua hàng dễ dàng', 'omni-commerce' ); ?></h3>
+                    <p class="text-label-sm text-outline"><?php esc_html_e( 'Thanh toán linh hoạt & bảo mật', 'omni-commerce' ); ?></p>
                 </div>
             </div>
             <div class="min-w-[85vw] md:min-w-0 snap-center shrink-0 flex items-center gap-4 bg-white border border-outline-variant p-6 rounded-lg shadow-sm">
@@ -103,8 +104,8 @@ $sale_banner = get_field('mi_videos_sale_banner', 'option') ?: 'BIG SALE TIVI XI
                     <span class="material-symbols-outlined text-[32px]">local_shipping</span>
                 </div>
                 <div>
-                    <h4 class="font-bold text-on-surface">Ship code toàn quốc</h4>
-                    <p class="text-label-sm text-outline">Nhận hàng rồi mới thanh toán</p>
+                    <h3 class="font-bold text-on-surface"><?php esc_html_e( 'Ship COD toàn quốc', 'omni-commerce' ); ?></h3>
+                    <p class="text-label-sm text-outline"><?php esc_html_e( 'Nhận hàng rồi mới thanh toán', 'omni-commerce' ); ?></p>
                 </div>
             </div>
             <div class="min-w-[85vw] md:min-w-0 snap-center shrink-0 flex items-center gap-4 bg-white border border-outline-variant p-6 rounded-lg shadow-sm">
@@ -112,8 +113,8 @@ $sale_banner = get_field('mi_videos_sale_banner', 'option') ?: 'BIG SALE TIVI XI
                     <span class="material-symbols-outlined text-[32px]">credit_card</span>
                 </div>
                 <div>
-                    <h4 class="font-bold text-on-surface">Trả góp 0%</h4>
-                    <p class="text-label-sm text-outline">Lãi suất ưu đãi qua thẻ tín dụng</p>
+                    <h3 class="font-bold text-on-surface"><?php esc_html_e( 'Trả góp 0%', 'omni-commerce' ); ?></h3>
+                    <p class="text-label-sm text-outline"><?php esc_html_e( 'Lãi suất ưu đãi qua thẻ tín dụng', 'omni-commerce' ); ?></p>
                 </div>
             </div>
         <?php endif; ?>

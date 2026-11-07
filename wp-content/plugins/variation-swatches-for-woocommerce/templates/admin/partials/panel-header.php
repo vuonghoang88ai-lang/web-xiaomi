@@ -9,11 +9,6 @@
                 <div class="variaion-munu-wrap">
                     <ul>
                         <li>
-                            <a href="<?php echo esc_url( admin_url( 'admin.php?page=variation-swatches-addons' ) ); ?>"">
-                                <?php _e( 'Addons', 'wcvs' ); ?>
-                            </a>
-                        </li>
-                        <li>
                             <a href="https://aovup.com/plugins/woocommerce-variation-swatches/free-vs-pro/?utm_source=user-dashboard&utm_medium=header" target="_blank">
                                 <?php _e( 'Free vs Pro', 'wcvs' ); ?>
                             </a>

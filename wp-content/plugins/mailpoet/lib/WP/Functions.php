@@ -167,6 +167,10 @@ class Functions {
     return current_user_can($capability);
   }
 
+  public function wpDoingAjax() {
+    return wp_doing_ajax();
+  }
+
   public function userCan($user, $capability) {
     return user_can($user, $capability);
   }
@@ -175,12 +179,17 @@ class Functions {
     return date_i18n($dateformatstring, $timestampWithOffset, $gmt);
   }
 
+  /** @return string|false */
+  public function wpDate($format, $timestamp = null, $timezone = null) {
+    return wp_date($format, $timestamp, $timezone);
+  }
+
   public function deleteCommentMeta($commentId, $metaKey, $metaValue = '') {
     return delete_comment_meta($commentId, $metaKey, $metaValue);
   }
 
-  public function addOption($option, $value) {
-    return add_option($option, $value);
+  public function addOption($option, $value, $autoload = null) {
+    return add_option($option, $value, '', $autoload);
   }
 
   public function deleteOption($option) {
@@ -265,6 +274,9 @@ class Functions {
   }
 
   public function getEditableRoles() {
+    if (!function_exists('get_editable_roles')) {
+      require_once ABSPATH . 'wp-admin/includes/user.php';
+    }
     return get_editable_roles();
   }
 
@@ -434,6 +446,10 @@ class Functions {
 
   public function parseBlocks(string $content): array {
     return parse_blocks($content);
+  }
+
+  public function isSsl(): bool {
+    return is_ssl();
   }
 
   public function isMultisite() {
@@ -697,6 +713,10 @@ class Functions {
     return wp_parse_url($url, $component);
   }
 
+  public function wpRegistrationUrl() {
+    return wp_registration_url();
+  }
+
   public function wpSpecialcharsDecode($string, $quoteStyle = ENT_NOQUOTES) {
     return wp_specialchars_decode($string, $quoteStyle);
   }
@@ -731,6 +751,10 @@ class Functions {
 
   public function wpSafeRedirect($location, $status = 302) {
     return wp_safe_redirect($location, $status);
+  }
+
+  public function wpSalt($scheme = 'auth') {
+    return wp_salt($scheme);
   }
 
   public function wpValidateRedirect($location, $fallbackUrl = '') {
@@ -1087,6 +1111,10 @@ class Functions {
    */
   public function updatePostMeta(int $postId, string $metaKey, $metaValue, $prevValue = '') {
     return update_post_meta($postId, $metaKey, $metaValue, $prevValue);
+  }
+
+  public function deletePostMeta(int $postId, string $metaKey, $metaValue = ''): bool {
+    return delete_post_meta($postId, $metaKey, $metaValue);
   }
 
   public function getFileData(string $file, array $default_headers, string $context = 'plugin'): array {

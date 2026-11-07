@@ -110,3 +110,24 @@ Tài liệu rà soát và kiểm toán Technical SEO cho dự án michinhhang, t
 Để nghiệm thu dữ liệu cấu trúc thực tế trên dự án, hãy sử dụng các công cụ sau:
 1. **[Rich Results Test (Google)](https://search.google.com/test/rich-results)**: Công cụ chính thức của Google để xem liệu Schema có đạt đủ điều kiện hiển thị kết quả nhiều định dạng không.
 2. **[Schema Markup Validator (Schema.org)](https://validator.schema.org/)**: Dùng để kiểm tra cấu trúc cú pháp chung và cảnh báo các trường không hợp lệ hoặc thiếu sót theo tiêu chuẩn của Schema.org.
+
+## 5. Kiến Trúc Tương Thích & Chống Trùng Lặp Với Plugin SEO (Rank Math)
+Để đảm bảo website chuẩn SEO cao cấp mà không gây xung đột hay trùng lặp thẻ meta/schema với plugin SEO (`seo-by-rank-math`), theme triển khai module `inc/seo.php` theo các nguyên tắc:
+
+1. **Không in thẻ script JSON-LD hay meta tags thủ công trong header:**
+   - Tất cả dữ liệu Schema Product được tích hợp và làm giàu trực tiếp qua bộ lọc `rank_math/json_ld` (bổ sung `brand` Xiaomi và `sku` vào `richSnippet`). Tránh việc tạo ra nhiều thẻ `<script type="application/ld+json">` chứa các Product entity trùng nhau trên cùng 1 trang.
+2. **Loại bỏ dữ liệu có cấu trúc trùng lặp từ WooCommerce:**
+   - Gỡ bỏ hook mặc định `output_structured_data` ở `wp_footer` của WooCommerce nhằm tránh in lặp BreadcrumbList ở cuối trang.
+3. **Fallback Meta Description thông minh:**
+   - Sử dụng bộ lọc `rank_math/frontend/description` để tự động điền Meta Description chuyên nghiệp cho Trang chủ khi admin chưa nhập trong Rank Math, tự động đồng bộ sang cả Open Graph (`og:description`) và Twitter Card.
+4. **Tự động hóa Image Alt (Image SEO):**
+   - Sử dụng hook `wp_get_attachment_image_attributes` để tự động điền `alt` bằng Media Title hoặc Post Title cho bất kỳ ảnh nào bị bỏ trống `alt=""`.
+5. **Lưu ý triển khai môi trường Rank Math:**
+   - Khi cài mới plugin Rank Math, nếu chưa kết nối tài khoản hoặc chưa nhấn bỏ qua Wizard, Rank Math sẽ chặn frontend (`registration->invalid = true`). Cần đảm bảo option `rank_math_registration_skip` có giá trị `1` trong `wp_options` hoặc hằng số `RANK_MATH_REGISTRATION_SKIP` được khai báo.
+6. **Cơ chế nhường quyền Schema của Plugin ERP nội bộ:**
+   - Trong `class-mi-erp-seo-schema.php`, hàm `render_schema()` tự động kiểm tra `defined('RANK_MATH_VERSION') || function_exists('rank_math')` để return sớm, ngăn chặn hoàn toàn việc in thẻ `<script type="application/ld+json">` chứa `Article` và `BreadcrumbList` độc lập khi Rank Math đã xử lý `@graph`.
+7. **Tự động kích hoạt Sơ đồ trang web XML (`/sitemap_index.xml`):**
+   - Theme tự động flush rewrite rules trong hook `init` (priority 99) khi phát hiện option `rank_math_flush_rewrite`, đảm bảo URL `/sitemap_index.xml` và các sub-sitemap trả về HTTP 200 OK ngay mà không cần truy cập `wp-admin`.
+8. **Chuẩn hóa Phân cấp Heading (`<h1>` - `<h6>`) cho Danh mục:**
+   - Đảm bảo Document Outline hợp lệ: Widget lọc và sidebar dùng thẻ `<h3>`, bảo toàn vị trí duy nhất của `<h1>` cho tên danh mục và `<h2>` cho đoạn mô tả SEO.
+

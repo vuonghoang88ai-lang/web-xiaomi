@@ -7,7 +7,7 @@ $baseDir   = dirname($vendorDir);
 
 return array(
 	'RedditForWooCommerce\\' => array(
-		'version' => 'dev-release/1.0.6',
+		'version' => 'dev-release/1.0.7',
 		'path'    => array( $baseDir . '/includes' )
 	),
 	'Automattic\\Jetpack\\Autoloader\\' => array(

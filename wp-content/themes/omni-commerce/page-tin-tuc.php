@@ -30,19 +30,20 @@ if ( $paged == 1 ) {
 }
 ?>
 
-<main id="primary" class="mx-auto max-w-[1440px] px-4 py-8">
+<main id="primary" class="mx-auto max-w-[1440px] px-2.5 sm:px-4 py-4 sm:py-8">
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
         
         <!-- Main Content (Left 3 cols) -->
         <div class="lg:col-span-3">
             <!-- Header section -->
             <div class="flex items-center justify-between border-b border-gray-200 mb-6 flex-wrap gap-4">
-                <h1 class="text-[28px] md:text-[32px] font-black uppercase text-primary border-b-2 border-primary pb-2 -mb-[1px] whitespace-nowrap shrink-0"><?php echo esc_html(get_the_title()); ?></h1>
-                <div class="hidden md:flex items-center gap-2 lg:gap-3 text-[14px] pb-2 flex-wrap">
+                <h1 class="text-[24px] sm:text-[28px] md:text-[32px] font-black uppercase text-primary border-b-2 border-primary pb-2 -mb-[1px] whitespace-nowrap shrink-0"><?php echo esc_html(get_the_title()); ?></h1>
+                <div class="flex items-center gap-2 lg:gap-3 text-[13px] sm:text-[14px] pb-2 overflow-x-auto scrollbar-hide w-full md:w-auto -mx-1 px-1">
                     <?php 
-                    $nav_categories = get_categories(array('number' => 4, 'orderby' => 'count', 'order' => 'DESC'));
+                    $default_cat_id = absint( get_option( 'default_category', 1 ) );
+                    $nav_categories = get_categories( array( 'number' => 4, 'orderby' => 'count', 'order' => 'DESC', 'exclude' => array( $default_cat_id ) ) );
                     foreach ($nav_categories as $cat) {
-                        echo '<a href="' . esc_url(get_category_link($cat)) . '" class="px-4 py-1.5 rounded-full border border-gray-200 bg-gray-50 hover:border-primary hover:bg-primary hover:text-white transition-all font-semibold text-gray-700 whitespace-nowrap">' . esc_html($cat->name) . '</a>';
+                        echo '<a href="' . esc_url(get_category_link($cat)) . '" class="px-3.5 py-1.5 rounded-full border border-gray-200 bg-gray-50 hover:border-primary hover:bg-primary hover:text-white transition-all font-semibold text-gray-700 whitespace-nowrap shrink-0">' . esc_html($cat->name) . '</a>';
                     }
                     ?>
                 </div>

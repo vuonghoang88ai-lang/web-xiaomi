@@ -96,12 +96,20 @@ get_header(); ?>
 <?php do_action( 'woocommerce_before_main_content' ); ?>
 
 <?php
-// --- Biến dùng chung toàn trang ---
 $current_term  = get_queried_object();
-$mi_base_url   = remove_query_arg( array_keys( $_GET ) );
+if ( ! empty( $current_term ) && ! is_wp_error( $current_term ) && isset( $current_term->taxonomy ) ) {
+    $mi_base_url = get_term_link( $current_term );
+} elseif ( function_exists( 'is_shop' ) && is_shop() ) {
+    $mi_base_url = wc_get_page_permalink( 'shop' );
+} else {
+    $mi_base_url = strtok( $_SERVER['REQUEST_URI'] ?? '', '?' );
+}
+if ( empty( $mi_base_url ) || is_wp_error( $mi_base_url ) ) {
+    $mi_base_url = home_url( '/' );
+}
 ?>
 
-<main id="primary" class="mx-auto max-w-[1440px] px-4 py-4">
+<main id="primary" class="mx-auto max-w-[1440px] px-2.5 sm:px-4 py-3 sm:py-4">
 
 <!-- Breadcrumbs -->
 <div class="text-[13px] text-text-muted mb-6">
@@ -125,6 +133,34 @@ $banner_2 = $banner_2 ?: ( $banner_set[1] ?? '' );
 $banner_3 = $banner_3 ?: ( $banner_set[2] ?? '' );
 
 if ( $banner_1 || $banner_2 || $banner_3 ) :
+    $is_fridge = ( isset( $current_term->slug ) && strpos( $current_term->slug, 'tu-lanh' ) !== false );
+    $is_tivi   = ( isset( $current_term->slug ) && ( strpos( $current_term->slug, 'tivi' ) !== false || strpos( $current_term->slug, 'tv' ) !== false ) );
+    $term_link = ( isset($current_term->taxonomy) ) ? get_term_link($current_term) : home_url('/');
+    if ( is_wp_error($term_link) ) { $term_link = home_url('/'); }
+
+    if ( $is_fridge ) {
+        $banner_link_1  = add_query_arg( 'size', '500', $term_link );
+        $banner_title_1 = 'Tủ Lạnh 4 Cửa Thông Minh Xiaomi 650L';
+        $banner_link_2  = add_query_arg( 'min_price', '10000000', $term_link );
+        $banner_title_2 = 'Tủ Lạnh Xiaomi Làm Lạnh Kép - Bảo Quản 7 Ngày';
+        $banner_link_3  = $term_link;
+        $banner_title_3 = 'Tủ Lạnh Xiaomi 430L Ti-Grey Smart App Control';
+    } elseif ( $is_tivi ) {
+        $banner_link_1  = add_query_arg( 'size', '75', $term_link );
+        $banner_title_1 = 'Tivi Xiaomi Màn Hình Lớn QLED 65-100 inch';
+        $banner_link_2  = add_query_arg( 'min_price', '10000000', $term_link );
+        $banner_title_2 = 'Tivi Xiaomi Gaming 120Hz MEMC';
+        $banner_link_3  = $term_link;
+        $banner_title_3 = 'Tivi Xiaomi Smart Google TV';
+    } else {
+        // Thiết Bị Gia Đình
+        $banner_link_1  = add_query_arg( 'min_price', '5000000', $term_link );
+        $banner_title_1 = 'Robot Hút Bụi Lau Nhà Tự Động Xiaomi';
+        $banner_link_2  = $term_link;
+        $banner_title_2 = 'Hệ Sinh Thái Gia Đình Thông Minh Xiaomi';
+        $banner_link_3  = $term_link;
+        $banner_title_3 = 'Mega Sale Thiết Bị Gia Đình Xiaomi';
+    }
 ?>
 <style>
     /* Ẩn khối banner trên Mobile để tránh UX Bloat, giữ nguyên trên Desktop */
@@ -133,27 +169,42 @@ if ( $banner_1 || $banner_2 || $banner_3 ) :
     }
 </style>
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 mi-desktop-only-banner">
-    <div class="h-48 rounded-xl overflow-hidden relative group cursor-pointer bg-cover bg-center shadow-sm" style="background-image: url('<?php echo esc_url( $banner_1 ); ?>');">
-        <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-black/10 group-hover:from-black/80 group-hover:via-black/20 transition-all"></div>
+    <a href="<?php echo esc_url( $banner_link_1 ); ?>" class="h-48 rounded-2xl overflow-hidden relative group cursor-pointer block border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-300" title="<?php echo esc_attr( $banner_title_1 ); ?>">
+        <div class="w-full h-full bg-cover bg-center group-hover:scale-105 transition-transform duration-500" style="background-image: url('<?php echo esc_url( $banner_1 ); ?>');"></div>
+        <?php if ( $custom_title_1 ) : ?>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent"></div>
         <div class="absolute inset-x-0 bottom-0 p-4">
             <span class="inline-flex items-center rounded-full bg-white/15 border border-white/30 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-white backdrop-blur-sm">Nổi bật</span>
-            <p class="mt-2 text-lg font-bold text-white">Smart TV</p>
+            <p class="mt-2 text-lg font-bold text-white"><?php echo esc_html( $custom_title_1 ); ?></p>
         </div>
-    </div>
-    <div class="h-48 rounded-xl overflow-hidden relative group cursor-pointer bg-cover bg-center shadow-sm" style="background-image: url('<?php echo esc_url( $banner_2 ); ?>');">
-        <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-black/10 group-hover:from-black/80 group-hover:via-black/20 transition-all"></div>
+        <?php else: ?>
+        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
+        <?php endif; ?>
+    </a>
+    <a href="<?php echo esc_url( $banner_link_2 ); ?>" class="h-48 rounded-2xl overflow-hidden relative group cursor-pointer block border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-300" title="<?php echo esc_attr( $banner_title_2 ); ?>">
+        <div class="w-full h-full bg-cover bg-center group-hover:scale-105 transition-transform duration-500" style="background-image: url('<?php echo esc_url( $banner_2 ); ?>');"></div>
+        <?php if ( $custom_title_2 ) : ?>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent"></div>
         <div class="absolute inset-x-0 bottom-0 p-4">
-            <span class="inline-flex items-center rounded-full bg-white/15 border border-white/30 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-white backdrop-blur-sm">Phòng khách</span>
-            <p class="mt-2 text-lg font-bold text-white">Công nghệ mới</p>
+            <span class="inline-flex items-center rounded-full bg-white/15 border border-white/30 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-white backdrop-blur-sm">Hiệu năng cao</span>
+            <p class="mt-2 text-lg font-bold text-white"><?php echo esc_html( $custom_title_2 ); ?></p>
         </div>
-    </div>
-    <div class="h-48 rounded-xl overflow-hidden relative group cursor-pointer bg-cover bg-center shadow-sm" style="background-image: url('<?php echo esc_url( $banner_3 ); ?>');">
-        <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-black/10 group-hover:from-black/80 group-hover:via-black/20 transition-all"></div>
+        <?php else: ?>
+        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
+        <?php endif; ?>
+    </a>
+    <a href="<?php echo esc_url( $banner_link_3 ); ?>" class="h-48 rounded-2xl overflow-hidden relative group cursor-pointer block border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-300" title="<?php echo esc_attr( $banner_title_3 ); ?>">
+        <div class="w-full h-full bg-cover bg-center group-hover:scale-105 transition-transform duration-500" style="background-image: url('<?php echo esc_url( $banner_3 ); ?>');"></div>
+        <?php if ( $custom_title_3 ) : ?>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent"></div>
         <div class="absolute inset-x-0 bottom-0 p-4">
             <span class="inline-flex items-center rounded-full bg-white/15 border border-white/30 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-white backdrop-blur-sm">Gia đình</span>
-            <p class="mt-2 text-lg font-bold text-white">Tiết kiệm năng lượng</p>
+            <p class="mt-2 text-lg font-bold text-white"><?php echo esc_html( $custom_title_3 ); ?></p>
         </div>
-    </div>
+        <?php else: ?>
+        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
+        <?php endif; ?>
+    </a>
 </div>
 <?php endif; ?>
 
@@ -172,7 +223,7 @@ if ( $banner_1 || $banner_2 || $banner_3 ) :
         <!-- Category Tree -->
         <div class="mb-8 p-4 bg-background-light rounded-xl border border-border-gray shadow-sm">
             <div class="flex items-center justify-between border-b border-primary/40 pb-2 mb-4">
-                <h2 class="text-base font-bold text-primary uppercase !m-0">DANH MỤC</h2>
+                <h3 class="text-base font-bold text-primary uppercase !m-0">DANH MỤC</h3>
             </div>
             <ul class="space-y-3 text-sm">
                 <?php 
@@ -245,7 +296,7 @@ if ( $banner_1 || $banner_2 || $banner_3 ) :
         
         <div class="mb-8 p-4 bg-background-light rounded-xl border border-border-gray shadow-sm" id="mi-filters-accordion">
             <div class="flex items-center justify-between border-b border-primary/40 pb-2 mb-4">
-                <h2 class="text-base font-bold text-primary uppercase !m-0">BỘ LỌC</h2>
+                <h3 class="text-base font-bold text-primary uppercase !m-0">BỘ LỌC</h3>
                 <?php if ( $has_active_filters ) : ?>
                     <a href="<?php echo esc_url( $mi_base_url ); ?>" class="text-[11px] text-secondary hover:underline font-semibold flex items-center gap-0.5" title="Xóa tất cả bộ lọc">
                         <span class="material-symbols-outlined !text-sm">close</span> Xóa bộ lọc
@@ -558,7 +609,7 @@ if ( $banner_1 || $banner_2 || $banner_3 ) :
         if ( $grid_query->have_posts() ) :
         ?>
             <!-- Products Grid (2 cols mobile, 3 cols tablet, 4 cols desktop) -->
-            <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+            <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4">
                 <?php
                 while ( $grid_query->have_posts() ) :
                     $grid_query->the_post();
@@ -631,7 +682,7 @@ if ( $banner_1 || $banner_2 || $banner_3 ) :
 <?php 
 $page_cat_name = ( isset($current_term->name) ) ? $current_term->name : 'Tivi Xiaomi';
 $seo_video_image = ( isset($current_term->taxonomy) && function_exists('get_field') ) ? get_field('cat_seo_image', $current_term) : '';
-$seo_video_image = $seo_video_image ?: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCDVYBOJyVGfnmzM92j7ekivl9ozv_1h-0Ihmg0obQQwrBNEAqHzgfBHV8KMPy90yg6FGGRBm4whajuJEOD-fAJZZg3bX_hbpbYIPLg-wJ8PrpaX6iv0IR3vI-So4qmIaVybi9Uv8FAoW6pb0WXaVBebb6fEwAMol9-bHpS0O_kqdW8WO-lsbGe8ZgFkkbMeAoHvP8Uu8Vy04n8_3VqZXeisT89fg1470DmVkXf-5U-VXclMkgIFO06';
+$seo_video_image = $seo_video_image ?: ( ! empty($banner_1) ? $banner_1 : content_url( '/uploads/banners/banner-04-khuyen-mai.jpg' ) );
 $has_custom_desc = ( isset($current_term->taxonomy) && ! empty($current_term->description) );
 ?>
 <style>

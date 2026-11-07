@@ -27,7 +27,7 @@ class VSWC_Settings_Page {
 	 */
 	public function handle_external_link() {
 		global $submenu;
-		$pro_external_url = 'https://aovup.com/lp/variations-swatches-upgrade/?utm_source=dashboard&utm_medium=menu-link&utm_campaign=swatch-offer&utm_id=dashboard-upgrade';
+		$pro_external_url = 'https://aovup.com/plugins/woocommerce-variation-swatches/?utm_source=dashboard&utm_medium=menu-link&utm_campaign=swatch-offer&utm_id=dashboard-upgrade';
 
 		if ( isset( $submenu['woosuite-core'] ) ) {
 			foreach ( $submenu['woosuite-core'] as $index => $menu_data ) {
@@ -71,39 +71,17 @@ class VSWC_Settings_Page {
 			array( $this, 'render' )
 		);
 
-		//Adding fake pages
-		if ( ! TA_WC_Variation_Swatches::is_woo_core_active() ) {
+		//Adding the "Upgrade to Pro!" link, handle_external_link() points it to aovup.com
+		if ( ! TA_WC_Variation_Swatches::is_woo_core_active() && ! TA_WC_Variation_Swatches::is_pro_addon_active() ) {
 			add_submenu_page(
 				'woosuite-core',
-				__( 'Woosuite Addons', 'wcvs' ),
-				__( 'Addons', 'wcvs' ),
+				__( 'Upgrade to Pro!', 'wcvs' ),
+				__( 'Upgrade to Pro!', 'wcvs' ),
 				'manage_options',
-				'variation-swatches-addons',
-				array( $this, 'render_addons' )
+				'aovup-swatchupgrade-to-pro',
+				array( $this, 'render_fake_page' ),
+				999999
 			);
-
-			$list_of_fake_pages = array(
-				array(
-					'label'    => __( 'Upgrade to Pro!', 'wcvs' ),
-					'path'     => 'woosuite-variation-swatches-pro/woosuite-variation-swatches-pro.php',
-					'position' => 999999
-				)
-
-			);
-			foreach ( $list_of_fake_pages as $fake_page_data ) {
-				if ( Swatch_AovUp_Freemium::is_plugin_activated( $fake_page_data['path'] ) ) {
-					continue;
-				}
-				add_submenu_page(
-					'woosuite-core',
-					$fake_page_data['label'],
-					$fake_page_data['label'],
-					'manage_options',
-					'aovup-swatch' . sanitize_title( $fake_page_data['label'] ),
-					array( $this, 'render_fake_page' ),
-					$fake_page_data['position'] ?? null
-				);
-			}
 		}
 
 		//Adding hack to remove the first sub menu page
@@ -116,17 +94,21 @@ class VSWC_Settings_Page {
 	public function render() {
 		TA_WC_Variation_Swatches::get_template( 'admin/setting-panel.php' );
 		TA_WC_Variation_Swatches::get_template( 'admin/pro-feature-popup.php' );
-		if ( $this->upgrader_obj instanceof VSWC_Upgrader && $this->upgrader_obj->is_welcome_popup_should_be_shown() ) {
-			TA_WC_Variation_Swatches::get_template( 'admin/welcome-popup.php' );
-		}
 	}
 
-	public function render_addons() {
-		TA_WC_Variation_Swatches::get_template( 'admin/addons-pages.php' );
-	}
-
+	/**
+	 * Only reached when the "Upgrade to Pro!" page is opened directly, the menu item itself links to aovup.com
+	 */
 	public function render_fake_page() {
-		TA_WC_Variation_Swatches::get_template( 'admin/freemium.php' );
+		?>
+        <div class="wrap">
+            <h1><?php esc_html_e( 'Variation Swatches Pro', 'wcvs' ); ?></h1>
+            <p><?php esc_html_e( 'See the Pro features and pricing on aovup.com.', 'wcvs' ); ?></p>
+            <p>
+                <a class="button button-primary" href="https://aovup.com/plugins/woocommerce-variation-swatches/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'See Features & Pricing', 'wcvs' ); ?></a>
+            </p>
+        </div>
+		<?php
 	}
 
 	public function tawcvs_save_settings() {
@@ -167,7 +149,7 @@ class VSWC_Settings_Page {
 	 */
 	private function syncing_up_color_image_swatches() {
 		$latest_settings  = get_option( $this->option_name, array() );
-		$general_settings = $latest_settings['general'];
+		$general_settings = isset( $latest_settings['general'] ) && is_array( $latest_settings['general'] ) ? $latest_settings['general'] : array();
 
 		$all_attrs = wc_get_attribute_taxonomies();
 
@@ -186,7 +168,9 @@ class VSWC_Settings_Page {
 			'image'
 		);
 
-		if ( TA_WC_Variation_Swatches::is_pro_addon_active() ) {
+		//Without Pro, only sync radio buttons when they are switched on: a save with them off must not turn
+		//attributes set to radio into dropdowns, which versions before 2.2.9 never did without Pro
+		if ( TA_WC_Variation_Swatches::is_pro_addon_active() || ( isset( $general_settings['enable-radio-swatches'] ) && $general_settings['enable-radio-swatches'] === '1' ) ) {
 			$this->update_attribute_by_type(
 				$general_settings,
 				$all_attrs,
@@ -208,9 +192,9 @@ class VSWC_Settings_Page {
 	 */
 	private function update_attribute_by_type( $general_settings, &$all_attrs, $setting_key, $attribute_key_prefix, $attribute_type_name ) {
 
-		if ( $general_settings[ $setting_key ] === '1' ) {
+		if ( isset( $general_settings[ $setting_key ] ) && $general_settings[ $setting_key ] === '1' ) {
 			foreach ( $all_attrs as $index => $attr ) {
-				if ( $general_settings[ $attribute_key_prefix . $attr->attribute_name ] === '1' ) {
+				if ( isset( $general_settings[ $attribute_key_prefix . $attr->attribute_name ] ) && $general_settings[ $attribute_key_prefix . $attr->attribute_name ] === '1' ) {
 					$this->update_product_attribute( $attribute_type_name, $attr->attribute_name );
 
 					//We don't want to check it in other type

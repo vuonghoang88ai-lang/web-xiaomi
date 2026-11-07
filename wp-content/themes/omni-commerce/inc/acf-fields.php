@@ -245,7 +245,7 @@ add_action('acf/init', function() {
                     'label' => 'Text Địa chỉ',
                     'name' => 'mi_hero_address_text',
                     'type' => 'text',
-                    'default_value' => '41 Khuất Duy Tiến, HN',
+                    'default_value' => '65 Hồ Ba Mẫu, Đống Đa, HN',
                 ),
                 array(
                     'key' => 'field_mi_hero_hotline_title',
@@ -356,7 +356,7 @@ add_action('acf/init', function() {
                     'label' => 'Địa chỉ Topbar',
                     'name' => 'mi_hf_topbar_address',
                     'type' => 'text',
-                    'default_value' => 'Số 41 Khuất Duy Tiến, Thanh Xuân, Hà Nội',
+                    'default_value' => 'Số 65 Hồ Ba Mẫu, Phường Phương Liên, Quận Đống Đa, Hà Nội',
                 ),
                 array(
                     'key' => 'field_mi_hf_topbar_hotline',
@@ -466,13 +466,15 @@ add_action('acf/init', function() {
     }
 });
 
-// Đăng ký Menu
-function viomi_theme_register_menus() {
-    register_nav_menus(
-        array(
-            'header-menu' => __( 'Header Menu', 'omni-commerce' ),
-            'footer-policy' => __( 'Footer Policy Menu', 'omni-commerce' ),
-            'category-menu' => __( 'Category Submenu', 'omni-commerce' )
-        )
-    );
+// Đăng ký Menu (Legacy fallback)
+if ( ! function_exists( 'viomi_theme_register_menus' ) ) {
+    function viomi_theme_register_menus() {
+        register_nav_menus(
+            array(
+                'header-menu' => __( 'Header Menu', 'omni-commerce' ),
+                'footer-policy' => __( 'Footer Policy Menu', 'omni-commerce' ),
+                'category-menu' => __( 'Category Submenu', 'omni-commerce' )
+            )
+        );
+    }
 }

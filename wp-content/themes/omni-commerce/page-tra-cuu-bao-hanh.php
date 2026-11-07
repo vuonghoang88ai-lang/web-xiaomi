@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; } // Exit if accessed directly.
 get_header(); 
 ?>
 
-<main id="primary" class="max-w-[1440px] mx-auto px-4 py-8 lg:py-12">
+<main id="primary" class="max-w-[1440px] mx-auto px-2.5 sm:px-4 py-4 sm:py-8 lg:py-12">
     
     <!-- Tiêu đề trang -->
     <div class="mb-8 lg:mb-10 text-center">
@@ -23,8 +23,7 @@ get_header();
         <?php endif; ?>
     </div>
 
-    <!-- Nội dung chính -->
-    <div class="max-w-5xl mx-auto">
+    <div class="w-full">
         
         <div class="prose prose-slate max-w-none w-full mi-page-content">
             <?php

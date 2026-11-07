@@ -26,6 +26,18 @@ get_footer()
 | Giữa | Hero Slider + Tab menu cuộn ngang | `mi_hero_slider` / 3 banner fields + `mi_hero_tabs` |
 | Phải | Banner mini + 2 tin tức mới nhất | `mi_hero_sidebar` + `WP_Query(post, 2)` |
 
+### Cột trái (Features, Địa chỉ & Hotline) — Quy tắc Co giãn & Bố cục
+1. **Chỉ hiển thị trên Desktop (`>= 900px`):** Dùng class `.mi-hero-secondary` với rule `@media (max-width: 899px) { display: none !important; }` để ẩn hoàn toàn trên Mobile/Tablet dọc, tránh gây nhiễu luồng mua sắm chính.
+2. **Co giãn theo chiều cao Slider (Equal Height Proportions):**
+   - Container 4 thẻ cam kết: `flex-1 flex flex-col justify-between gap-2 xl:gap-2.5 mb-2.5 min-h-0`.
+   - Mỗi thẻ cam kết: `flex-1 min-h-0 flex items-center`. Nhờ đó 4 thẻ tự động kéo giãn tỉ lệ đều đặn theo chiều cao của slider giữa, **triệt tiêu hoàn toàn khoảng trắng chết**.
+3. **Bảo vệ hiển thị trên màn hình Desktop nhỏ (900px - 1100px):**
+   - Icon Material Symbols bắt buộc có `shrink-0` để không bị méo.
+   - Chữ tiêu đề và mô tả có `min-w-0 flex-1 line-clamp-1` cùng font size thích ứng (`text-[12px] xl:text-[13px]`, `text-[10px] xl:text-[11px]`).
+4. **Nút Hotline tương tác trực tiếp:**
+   - Cố định ở đáy với `shrink-0`.
+   - Nút Hotline được cấu trúc dạng thẻ `<a href="tel:...">` với hover micro-interaction (`group-hover:scale-105 transition-transform`).
+
 ### Slider — Thứ tự ưu tiên
 1. `mi_home_main_banner` / `mi_home_sub_banner_1` / `mi_home_sub_banner_2`
 2. `mi_hero_slider` (repeater: image + link)
@@ -33,10 +45,10 @@ get_footer()
 
 ### Hotline field đúng
 ```php
-// ĐÚNG
-$hotline_text = get_field('mi_hotline_number', 'option') ?: '0822.83.4444';
+// ĐÚNG — Hỗ trợ fallback giữa mi_hotline_number và mi_hero_hotline_text
+$hotline_text = get_field('mi_hotline_number', 'option') ?: get_field('mi_hero_hotline_text', 'option') ?: '0822.83.4444';
 
-// SAI — field không tồn tại trong ACF group nào
+// SAI — Chỉ đọc 1 field không có fallback
 $hotline_text = get_field('mi_hero_hotline_text', 'option');
 ```
 
@@ -86,6 +98,20 @@ $banner_bg_color = $args['banner_bg_color']; // "from-xiaomi-yellow to-tertiary-
 $search_keywords = $args['search_keywords']; // array
 // get_sub_field() là LEGACY FALLBACK — không dùng trong luồng mới
 ```
+
+### Cột Banner Dọc & Responsive Layout (Desktop-First Preservation)
+1. **Desktop (`>= 900px`):** Cột banner dọc bên trái (`lg:w-1/5`) hiển thị đầy đủ 100% kèm ảnh sản phẩm lớn và nút Mua ngay. Giữ cấu trúc `class="mi-product-row-banner lg:w-1/5 flex flex-col ..."`, tuyệt đối không dùng class `hidden` hay `lg:flex`.
+2. **Mobile (`< 900px`):** Ẩn hoàn toàn cột banner bằng `@media (max-width: 899px) { .mi-product-row-banner { display: none !important; } }`. Khối lưới sản phẩm bên phải nhận `w-full lg:w-4/5 grid grid-cols-2 md:grid-cols-4 gap-3`, tự động bung rộng 100% full-width màn hình 2 cột.
+
+### Chuẩn hóa Card sản phẩm trang chủ (Visual Hierarchy & Social Proof)
+1. **Giá bán & Giảm giá:**
+   - Giá sau khuyến mãi: Hiển thị đầu tiên, to nhất (`text-base xl:text-lg`), cực đậm (`font-black text-secondary`).
+   - Giá trước khuyến mãi: Hiển thị sau, màu xám (`text-slate-400 line-through text-xs xl:text-sm font-normal`).
+   - Tag giảm giá: Hiển thị `-X%` cạnh giá cũ và badge góc trên ảnh.
+2. **Cụm Đánh giá sao & Lượt bán phong cách Shopee / Lazada:**
+   - Dùng `mt-auto pt-2.5` để căn gióng hoàn hảo mép đáy của tất cả card trong cùng một hàng.
+   - Bên trái: 5 ngôi sao Material Symbols vàng (`text-xiaomi-yellow`) + số lượt đánh giá `(X)` màu xám.
+   - Bên phải: `Đã bán X` (hoặc `1.3k` nếu >= 1000) với `whitespace-nowrap shrink-0 text-slate-500`.
 
 ---
 
@@ -158,7 +184,10 @@ $search_keywords = $args['search_keywords']; // array
 | 4 | Thanh toán + Chứng nhận | `mi_hf_footer_payment_icons`, `mi_hf_footer_certificate` |
 
 ### Address Bar
-- Danh sách Showroom: `mi_hf_footer_showrooms` hoặc 3 showroom tĩnh (Thanh Xuân, Long Biên, Cầu Giấy)
+- Danh sách Showroom: `mi_hf_footer_showrooms` hoặc 3 cơ sở tĩnh chính thức:
+  1. Trụ sở & Showroom Đống Đa: Số 65 Hồ Ba Mẫu, Phường Phương Liên, Quận Đống Đa, Hà Nội
+  2. Cơ sở Văn Quán - Hà Đông: Khu Sân bóng Hồ Văn Quán, Đường 19/5, KĐT Văn Quán, Quận Hà Đông, Hà Nội
+  3. Tổng Kho Cảng Hà Nội - Hai Bà Trưng: Kho 86, Cảng Hà Nội, Số 838 Bạch Đằng, Phường Thanh Lương, Quận Hai Bà Trưng, Hà Nội
 
 ### FAB (Floating Action Bar)
 - Hotline: `tel:` link, màu đỏ `#e60012`

@@ -1452,4 +1452,8 @@ table.variations .label {
   height: auto !important;
 }
 
+.swatch-radio .swatch.disabled + .swatch-label {
+  opacity: 0.4;
+}
+
 /*# sourceMappingURL=frontend.css.map */

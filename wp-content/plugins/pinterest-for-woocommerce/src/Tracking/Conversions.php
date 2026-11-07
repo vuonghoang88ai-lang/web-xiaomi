@@ -21,6 +21,9 @@ use Throwable;
 
 /**
  * Pinterest Conversions API support.
+ *
+ * @class   Conversions
+ * @version 1.6.0
  */
 class Conversions extends Tracker {
 
@@ -81,23 +84,20 @@ class Conversions extends Tracker {
 				return false;
 			}
 
-			/* translators: 1: Conversions API event name, 2: JSON encoded event data. */
 			$messages = sprintf(
-				'Sending Pinterest Conversions API event %1$s with a payload: %2$s',
-				$event_name,
-				wp_json_encode( $data )
+				'Sending Pinterest Conversions API event %s.',
+				$event_name
 			);
 			Logger::log( $messages, 'debug', 'conversions' );
 
 			return true;
 		} catch ( Throwable $e ) {
-			/* translators: 1: Conversions API event name, 2: JSON encoded event data, 3: Error code, 4: Error message. */
 			$messages = sprintf(
-				'Sending Pinterest Conversions API event %1$s with a payload %2$s has failed with the error %3$d code and %4$s message',
+				'Sending Pinterest Conversions API event %1$s has failed with the error %2$d code and %3$s message',
 				$event_name,
-				wp_json_encode( $data ),
 				$e->getCode(),
-				$e->getMessage()
+				// The upstream message is free text: keep it on one line and bounded.
+				mb_substr( sanitize_text_field( $e->getMessage() ), 0, 200 )
 			);
 			Logger::log( $messages, 'error', 'conversions' );
 
@@ -233,8 +233,13 @@ class Conversions extends Tracker {
 	 *
 	 * The landing-page `epik` parameter is the freshest source. Beacon requests
 	 * carry the landing page as the event source URL, so its query string is
-	 * checked before the current request. Pinterest's `_epik` cookie and the
-	 * WooCommerce session retain the click ID for later events.
+	 * checked before the current request. AJAX and form add-to-cart requests
+	 * do not carry it themselves, so the referer is checked next when it is on
+	 * this site; for add-to-cart requests that is usually the landing page, as
+	 * long as the browser's referrer policy keeps the query string. Pinterest's `_epik` cookie and the WooCommerce
+	 * session retain the click ID for later events.
+	 *
+	 * @since 1.6.0 Reads the click ID from the referer.
 	 *
 	 * @param string $event_source_url Optional URL where the event occurred.
 	 *
@@ -248,6 +253,14 @@ class Conversions extends Tracker {
 			$click_id = self::normalize_click_id( wp_unslash( $_GET['epik'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized in normalize_click_id().
 		}
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		if ( false === $click_id ) {
+			$referer = (string) wp_get_referer();
+			// wp_get_referer() also accepts other allowed redirect hosts; only this site's pages count.
+			if ( wp_parse_url( $referer, PHP_URL_HOST ) === strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) ) ) {
+				$click_id = self::get_click_id_from_url( $referer );
+			}
+		}
 
 		if ( false === $click_id && isset( $_COOKIE['_epik'] ) && is_string( $_COOKIE['_epik'] ) ) {
 			$click_id = self::normalize_click_id( wp_unslash( $_COOKIE['_epik'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized in normalize_click_id().

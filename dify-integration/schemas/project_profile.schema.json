@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://marketing-ai.local/schemas/project-profile.json",
+  "title": "Universal Marketing Project Profile",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "target_language": { "type": "string", "minLength": 2, "maxLength": 20 },
+    "industry": { "type": "string", "maxLength": 200 },
+    "offer_type": {
+      "type": "string",
+      "enum": ["product", "service", "saas", "content", "marketplace", "mixed", "other"]
+    },
+    "target_audience": { "type": "string", "maxLength": 500 },
+    "primary_offers": { "type": "string", "maxLength": 500 },
+    "conversion_goal": { "type": "string", "maxLength": 300 },
+    "brand_voice": { "type": "string", "maxLength": 300 },
+    "claims_evidence": { "type": "string", "maxLength": 1000 },
+    "compliance_constraints": { "type": "string", "maxLength": 1000 }
+  },
+  "required": ["target_language", "industry", "offer_type", "target_audience", "primary_offers", "conversion_goal", "brand_voice", "claims_evidence", "compliance_constraints"]
+}

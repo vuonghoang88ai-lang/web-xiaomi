@@ -35,7 +35,7 @@ while ( have_posts() ) :
     }
 
     $product_id     = $product->get_id();
-    $hotline        = get_field( 'mi_hotline_number', 'option' ) ?: '0822.83.4444';
+    $hotline        = get_field( 'mi_hf_topbar_hotline', 'option' ) ?: '0822.83.4444';
     $hotline_clean  = preg_replace( '/[^0-9]/', '', $hotline );
     $fab_messenger  = get_field( 'mi_hf_fab_messenger', 'option' ) ?: 'https://m.me/xiaomivn';
     $fab_zalo       = get_field( 'mi_hf_fab_zalo', 'option' ) ?: 'https://zalo.me/0822834444';
@@ -70,11 +70,11 @@ while ( have_posts() ) :
             }
         }
     }
-    $main_image_url = $main_image_id ? wp_get_attachment_image_url( $main_image_id, 'full' ) : wc_placeholder_img_src( 'woocommerce_single' );
+    $main_image_url = $main_image_id ? ( wp_get_attachment_image_url( $main_image_id, 'full' ) ?: wc_placeholder_img_src( 'woocommerce_single' ) ) : wc_placeholder_img_src( 'woocommerce_single' );
 ?>
 
 <!-- Main Content Wrapper -->
-<main id="primary" class="max-w-[1440px] mx-auto px-4 py-6 pb-24 lg:pb-8">
+<main id="primary" class="max-w-[1440px] mx-auto px-2.5 sm:px-4 py-4 sm:py-6 pb-24 lg:pb-8">
     
     <div class="mb-4">
         <?php do_action( 'woocommerce_before_single_product' ); ?>
@@ -143,8 +143,8 @@ while ( have_posts() ) :
             <?php if ( count( $all_image_ids ) > 1 ) : ?>
             <div id="gallery-thumbs-container" class="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide">
                 <?php foreach ( $all_image_ids as $index => $img_id ) : 
-                    $thumb_url = wp_get_attachment_image_url( $img_id, 'woocommerce_gallery_thumbnail' ) ?: wp_get_attachment_image_url( $img_id, 'thumbnail' );
-                    $full_url  = wp_get_attachment_image_url( $img_id, 'full' );
+                    $thumb_url = wp_get_attachment_image_url( $img_id, 'woocommerce_gallery_thumbnail' ) ?: wp_get_attachment_image_url( $img_id, 'thumbnail' ) ?: wc_placeholder_img_src( 'thumbnail' );
+                    $full_url  = wp_get_attachment_image_url( $img_id, 'full' ) ?: wc_placeholder_img_src( 'full' );
                     $active_cls = ( $index === 0 ) ? 'border-2 border-secondary' : 'border border-outline-variant opacity-75 hover:opacity-100';
                 ?>
                     <div class="gallery-thumb w-16 h-16 flex-shrink-0 <?php echo esc_attr( $active_cls ); ?> rounded-lg overflow-hidden cursor-pointer p-1 bg-white transition-all" data-full="<?php echo esc_url( $full_url ); ?>" data-index="<?php echo esc_attr( $index ); ?>">
@@ -500,17 +500,24 @@ while ( have_posts() ) :
                     <h3 class="font-extrabold text-gray-800 uppercase text-sm tracking-wide">CHẾ ĐỘ BẢO HÀNH</h3>
                 </div>
                 
-                <ul class="text-xs space-y-2.5 text-gray-700 leading-relaxed list-disc list-outside pl-4">
-                    <li><strong class="text-gray-900">Gói bảo hành mặc định:</strong> Bảo hành 30 ngày, lỗi đổi mới trong 15 ngày đầu</li>
-                    <li><strong class="text-gray-900">Gói bảo hành vàng:</strong> Bảo hành 24 tháng bao gồm cả main, nguồn, màn hình. Bảo hành lỗi đổi mới trong 15 ngày đầu</li>
-                    <li><strong class="text-gray-900">Bảo hành phần cứng:</strong> Bao gồm nguồn, màn hình</li>
-                    <li><strong class="text-gray-900">Không bảo hành:</strong> Chập cháy, va đập, rơi rớt, vào nước, thiên tai</li>
+                <ul class="text-xs space-y-2 text-gray-700 leading-relaxed list-disc list-outside pl-4">
+                    <li><strong class="text-gray-900">Gói Tiêu Chuẩn:</strong> Bảo hành 1 tháng phần cứng, nguồn &amp; màn hình. Lỗi 1 đổi 1 trong 30 ngày đầu (với lỗi NSX).</li>
+                    <li><strong class="text-gray-900">Gói Bảo Hành Vàng:</strong> Bảo hành 24 tháng toàn diện (12 tháng đầu 1 đổi 1, 12 tháng sau sửa chữa miễn phí; Remote bảo hành 3 tháng).</li>
+                    <li><strong class="text-gray-900">Cam kết:</strong> 100% linh kiện chuẩn, hỗ trợ kỹ thuật và cài đặt ứng dụng trọn đời.</li>
                 </ul>
                 
-                <div class="mt-4 pt-3 border-t border-gray-200 flex items-center justify-between">
-                    <a href="<?php echo esc_url( home_url( '/tra-cuu-bao-hanh/' ) ); ?>" class="text-primary font-semibold hover:underline flex items-center gap-1.5 text-xs">
-                        <span class="material-symbols-outlined !text-base text-primary">qr_code_scanner</span>
-                        Tra cứu bảo hành Serial Number (ERP)
+                <div class="mt-3.5 pt-3 border-t border-gray-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <a href="<?php echo esc_url( home_url( '/chinh-sach-bao-hanh/' ) ); ?>" class="text-primary font-semibold hover:underline flex items-center gap-1">
+                        <span class="material-symbols-outlined !text-[15px] text-primary">verified</span>
+                        Chính sách bảo hành
+                    </a>
+                    <a href="<?php echo esc_url( home_url( '/chinh-sach-doi-tra/' ) ); ?>" class="text-slate-600 hover:text-primary font-semibold hover:underline flex items-center gap-1">
+                        <span class="material-symbols-outlined !text-[15px] text-slate-400">published_with_changes</span>
+                        Đổi trả hàng
+                    </a>
+                    <a href="<?php echo esc_url( home_url( '/tra-cuu-bao-hanh/' ) ); ?>" class="text-slate-600 hover:text-primary font-semibold hover:underline flex items-center gap-1">
+                        <span class="material-symbols-outlined !text-[15px] text-slate-400">qr_code_scanner</span>
+                        Tra cứu Serial
                     </a>
                 </div>
             </div>
@@ -554,13 +561,26 @@ while ( have_posts() ) :
             
             <?php 
             $attributes    = $product->get_attributes();
-            $has_acf_specs = function_exists( 'have_rows' ) && have_rows( 'technical_specs', $product_id );
+            $raw_specs     = get_post_meta( $product_id, 'technical_specs', true );
+            $has_acf_rows  = function_exists( 'have_rows' ) && have_rows( 'technical_specs', $product_id );
+            $has_raw_specs = is_array( $raw_specs ) && ! empty( $raw_specs );
+            $has_any_specs = $has_acf_rows || $has_raw_specs || ! empty( $attributes );
 
-            if ( $has_acf_specs || ! empty( $attributes ) ) :
+            if ( $has_any_specs ) :
                 // D4: Capture specs rows một lần, tái sử dụng cho cả view rút gọn & modal.
                 // Tránh query DB 2 lần và giữ con trỏ ACF have_rows nhất quán.
                 ob_start();
-                if ( $has_acf_specs ) :
+                if ( $has_raw_specs ) :
+                    foreach ( $raw_specs as $spec ) :
+                        $spec_label = is_array( $spec ) ? ( $spec['spec_label'] ?? '' ) : '';
+                        $spec_value = is_array( $spec ) ? ( $spec['spec_value'] ?? '' ) : '';
+                        if ( empty( $spec_label ) ) continue;
+                        echo '<tr>';
+                        echo '<td class="p-3 font-semibold text-outline-variant w-1/3 border-b border-outline-variant/30">' . esc_html( $spec_label ) . '</td>';
+                        echo '<td class="p-3 text-on-surface border-b border-outline-variant/30">' . wp_kses_post( $spec_value ) . '</td>';
+                        echo '</tr>';
+                    endforeach;
+                elseif ( $has_acf_rows ) :
                     while ( have_rows( 'technical_specs', $product_id ) ) : the_row();
                         $spec_label = get_sub_field( 'spec_label' );
                         $spec_value = get_sub_field( 'spec_value' );
@@ -892,7 +912,7 @@ while ( have_posts() ) :
             <span class="text-[10px] font-bold">Showroom</span>
         </a>
         <div class="flex-[2] px-2">
-            <button type="button" onclick="const f = document.querySelector('form.cart button[type=submit]'); if(f){ f.click(); } else { window.location.href='<?php echo esc_url( wc_get_checkout_url() ); ?>'; }" class="w-full bg-secondary hover:bg-secondary-fixed-variant text-white py-2 rounded-lg font-bold text-xs uppercase shadow-md active:scale-95 transition-all flex items-center justify-center gap-1">
+            <button type="button" onclick="const b = document.querySelector('.btn-buy-now-custom') || document.querySelector('form.cart button[type=submit]'); if(b){ b.click(); } else { window.location.href='<?php echo esc_url( wc_get_checkout_url() ); ?>'; }" class="w-full bg-secondary hover:bg-secondary-fixed-variant text-white py-2 rounded-lg font-bold text-xs uppercase shadow-md active:scale-95 transition-all flex items-center justify-center gap-1">
                 <span class="material-symbols-outlined !text-sm">shopping_cart</span>
                 <span>Mua Ngay</span>
             </button>
@@ -945,6 +965,7 @@ while ( have_posts() ) :
         </div>
 
         <form id="mi-installment-form" onsubmit="event.preventDefault(); mi_submit_installment();" class="space-y-4">
+            <?php wp_nonce_field( 'mi_installment_action', 'installment_nonce' ); ?>
             <input type="hidden" id="installment-product-id" value="<?php echo esc_attr( $product->get_id() ); ?>">
             <input type="hidden" id="installment-product-name" value="<?php echo esc_attr( $product->get_name() ); ?>">
             
@@ -1021,7 +1042,8 @@ function mi_submit_installment() {
     data.append('city', document.getElementById('installment-city').value);
     data.append('doc', document.getElementById('installment-doc').value);
     data.append('note', document.getElementById('installment-note').value);
-    data.append('nonce', typeof mi_ajax_obj !== 'undefined' ? mi_ajax_obj.nonce : '');
+    const nonceInput = document.querySelector('#mi-installment-form input[name="installment_nonce"]');
+    data.append('nonce', nonceInput ? nonceInput.value : '');
     
     fetch((typeof wc_add_to_cart_params !== 'undefined' ? wc_add_to_cart_params.ajax_url : '/wp-admin/admin-ajax.php'), {
         method: 'POST',

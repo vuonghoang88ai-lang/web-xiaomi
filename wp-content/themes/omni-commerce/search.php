@@ -8,7 +8,7 @@ get_header(); ?>
         <h1 class="text-3xl md:text-4xl font-black text-slate-800 m-0 uppercase">
             <?php
             /* translators: %s: search query. */
-            printf( esc_html__( 'Kết quả tìm kiếm cho: %s', 'omni-commerce' ), '<span>' . get_search_query() . '</span>' );
+            printf( esc_html__( 'Kết quả tìm kiếm cho: %s', 'omni-commerce' ), '<span>' . esc_html( get_search_query() ) . '</span>' );
             ?>
         </h1>
     </header>

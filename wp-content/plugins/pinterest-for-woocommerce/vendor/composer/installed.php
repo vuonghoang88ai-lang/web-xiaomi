@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'woocommerce/pinterest-for-woocommerce',
-        'pretty_version' => 'dev-release/1.5.1',
-        'version' => 'dev-release/1.5.1',
-        'reference' => 'cb293074162d989fb044b2c12ba5eb2ce74040b6',
+        'pretty_version' => 'dev-trunk',
+        'version' => 'dev-trunk',
+        'reference' => '75f2a4fee020a3c8fccfc010b5da0da89a55b8b3',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -58,16 +58,16 @@
         'woocommerce/grow' => array(
             'pretty_version' => 'dev-compat-checker',
             'version' => 'dev-compat-checker',
-            'reference' => '3bc225916439d7b93d4f5ecb209c94fb47e76172',
+            'reference' => '44d933474841beb8fee8c90a26b29fc23dafaf3b',
             'type' => 'library',
             'install_path' => __DIR__ . '/../woocommerce/grow',
             'aliases' => array(),
             'dev_requirement' => false,
         ),
         'woocommerce/pinterest-for-woocommerce' => array(
-            'pretty_version' => 'dev-release/1.5.1',
-            'version' => 'dev-release/1.5.1',
-            'reference' => 'cb293074162d989fb044b2c12ba5eb2ce74040b6',
+            'pretty_version' => 'dev-trunk',
+            'version' => 'dev-trunk',
+            'reference' => '75f2a4fee020a3c8fccfc010b5da0da89a55b8b3',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

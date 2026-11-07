@@ -1,0 +1,128 @@
+      <!-- TAB: BÁO CÁO PHÂN TÍCH CHI TIẾT WEBSITE CẦN PHÁT TRIỂN (ON-PAGE AUDIT) -->
+      <section class="tab-pane" id="tab-my-site">
+        <div class="view-content-pane">
+          <div class="view-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+            <div>
+              <h3>Báo Cáo Phân Tích Chi Tiết Website Cần Phát Triển</h3>
+              <p>Trinh sát chuyên sâu On-page SEO, kiểm tra thẻ Meta, tiêu đề H1/H2, Silo điều hướng và khoảng trống Onpage trước khi đua top Google.</p>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button type="button" class="btn-primary" id="btnAutoFixOnpage" onclick="autoFixOnpageViaBridge()" style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; padding: 7px 14px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; border-radius: 6px; cursor: pointer; color: white; font-weight: 600; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);">
+                <span id="autoFixOnpageIcon">🚀</span> <span id="autoFixOnpageText">Tối Ưu Toàn Diện 100 Điểm</span>
+              </button>
+              <button type="button" class="btn-primary" id="btnRescanMySite" onclick="rescanMySite()" style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; padding: 7px 14px; background: rgba(99, 102, 241, 0.2); border: 1px solid var(--primary); border-radius: 6px; cursor: pointer; color: white;">
+                <span id="rescanMySiteIcon">🔄</span> <span id="rescanMySiteText">Quét Lại On-page Web Đích</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- NỘI DUNG AUDIT WEBSITE CẦN PHÁT TRIỂN -->
+          <div id="mySiteContent"></div>
+        </div>
+      </section>
+
+      <!-- TAB 2: 10 ĐỐI THỦ SERP & TÌNH BÁO ĐỐI THỦ MẪU -->
+      <section class="tab-pane" id="tab-competitors">
+        <div class="view-content-pane">
+          <div class="view-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+            <div>
+              <h3>Radar Đối Thủ SERP & Tình Báo Đối Thủ Mẫu</h3>
+              <p>Giải mã On-page, trích xuất bộ từ khóa vàng và quét 10 đối thủ trực tiếp trên Google (100% Online, loại trừ chính chủ).</p>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button type="button" class="btn-primary" id="btnBatchDeepAudit" onclick="batchDeepAuditAllCompetitors()" style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; padding: 7px 14px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; border-radius: 6px; cursor: pointer; color: white; font-weight: 600; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);">
+                <span id="batchAuditIcon">🚀</span> <span id="batchAuditText">Quét Chuyên Sâu Cả 10 Đối Thủ</span>
+              </button>
+              <button type="button" class="btn-primary" id="btnAnalyzeTarget" onclick="analyzeTargetWebsite()" style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; padding: 7px 14px; background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; border-radius: 6px; cursor: pointer; color: #60a5fa; font-weight: 600;">
+                <span id="targetAuditIcon">🎯</span> <span id="targetAuditText">Phân Tích Web Đích</span>
+              </button>
+              <button type="button" class="btn-primary" id="btnRescanCompetitors" onclick="rescanCompetitors()" style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; padding: 7px 14px; background: rgba(99, 102, 241, 0.2); border: 1px solid var(--primary); border-radius: 6px; cursor: pointer; color: white;">
+                <span id="rescanIcon">🔄</span> <span id="rescanText">Quét Lại SERP Online</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- KHUNG PHÂN TÍCH CHUYÊN SÂU WEB ĐÍCH (TARGET WEBSITE) -->
+          <div id="targetWebsiteSection" style="margin-bottom: 20px;"></div>
+
+          <!-- KHUNG TÌNH BÁO ĐỐI THỦ MẪU -->
+          <div id="seedCompetitorSection" style="margin-bottom: 20px;"></div>
+
+          <!-- BỘ LỌC ĐỐI THỦ THEO LOẠI HÌNH: ADS VS SEO -->
+          <div id="competitorFilterBar" style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;">
+            <button type="button" class="btn-filter-comp active" id="btnFilterAll" onclick="filterCompetitorsByType('all')" style="font-size: 12px; padding: 6px 12px; border-radius: 20px; background: rgba(99, 102, 241, 0.2); border: 1px solid var(--primary); color: #fff; cursor: pointer;">
+              🌐 Tất cả đối thủ (<span id="cntAllComp">0</span>)
+            </button>
+            <button type="button" class="btn-filter-comp" id="btnFilterAds" onclick="filterCompetitorsByType('paid_ads')" style="font-size: 12px; padding: 6px 12px; border-radius: 20px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171; cursor: pointer;">
+              📢 Đang chạy Google Ads (<span id="cntAdsComp">0</span>)
+            </button>
+            <button type="button" class="btn-filter-comp" id="btnFilterSeo" onclick="filterCompetitorsByType('organic_seo')" style="font-size: 12px; padding: 6px 12px; border-radius: 20px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; cursor: pointer;">
+              🌿 Top SEO Tự Nhiên (<span id="cntSeoComp">0</span>)
+            </button>
+          </div>
+
+          <!-- LƯỚI 10 ĐỐI THỦ SERP -->
+          <div class="grid-cards" id="competitorsGrid"></div>
+        </div>
+      </section>
+
+      <!-- TAB 3: MA TRẬN TỪ KHÓA & SERP RANK THEO TỪNG DANH MỤC -->
+      <section class="tab-pane" id="tab-keywords">
+        <div class="view-content-pane">
+          <div class="view-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+            <div>
+              <h3>Ma Trận Từ Khóa & Xếp Hạng SERP Đối Thủ</h3>
+              <p>Phân tích đối thủ chuyên sâu theo từng từ khóa ngách (Tivi, Máy giặt, Robot hút bụi...). Nhìn rõ Landing Page và thứ hạng thực tế trên Google.</p>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="keywordActionButtons">
+              <button type="button" class="btn-primary" onclick="refreshKeywordsTab()" style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; padding: 7px 14px; background: rgba(99, 102, 241, 0.2); border: 1px solid var(--primary); border-radius: 6px; cursor: pointer; color: white;">
+                <span>🔄</span> <span>Làm Mới Ma Trận</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- FORM THÊM TỪ KHÓA MỚI CẦN THEO DÕI (HIỂN THỊ ĐỘNG KHI CÓ DỰ ÁN) -->
+          <div class="keyword-add-bar" id="keywordAddBar" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+            <div style="flex: 2; min-width: 220px;">
+              <input type="text" id="newKeywordInput" class="form-input" placeholder="Nhập từ khóa mới cần phân tích (VD: sản phẩm chủ lực, model cụ thể)..." style="width: 100%; font-size: 13.5px; padding: 9px 12px;" onkeydown="if(event.key==='Enter') submitNewKeywordScan();">
+            </div>
+            <div style="flex: 1; min-width: 160px;">
+              <select id="newKeywordCategory" class="custom-select" style="width: 100%; font-size: 13px; padding: 9px 12px;">
+                <option value="">-- Chưa có danh mục --</option>
+              </select>
+            </div>
+            <button type="button" class="btn-primary" id="btnSubmitKeyword" onclick="submitNewKeywordScan()" style="padding: 9px 18px; display: flex; align-items: center; gap: 6px; font-weight: 600; white-space: nowrap; cursor: pointer;">
+              <span>🔍 Quét Live SERP & Thêm</span>
+            </button>
+          </div>
+
+          <!-- BỘ LỌC SILO DANH MỤC NHANH (CATEGORY TABS) -->
+          <div id="keywordCategoryFilterBar" style="display: flex; gap: 8px; margin-bottom: 18px; overflow-x: auto; padding-bottom: 6px;"></div>
+
+          <!-- DANH SÁCH MA TRẬN TỪ KHÓA & SERP THỰC TẾ -->
+          <div id="keywordMatrixContainer"></div>
+        </div>
+      </section>
+
+      <!-- TAB 4: CHIẾN LƯỢC UVP -->
+      <section class="tab-pane" id="tab-uvp">
+        <div class="view-content-pane">
+          <div class="view-header">
+            <h3>Chiến Lược Lợi Thế Cạnh Tranh Kép (UVP)</h3>
+            <p>Định vị độc quyền mài sắc bén từ khoảng trống và điểm mù của 10 đối thủ.</p>
+          </div>
+          <div id="uvpContent"></div>
+        </div>
+      </section>
+
+      <!-- TAB 4: CMS & GSC -->
+      <section class="tab-pane" id="tab-cms">
+        <div class="view-content-pane">
+          <div class="view-header">
+            <h3>Cầu Nối CMS & Hiệu Suất Tìm Kiếm</h3>
+            <p>Quản lý kết nối xuất bản tự động lên WordPress và Google Search Console.</p>
+          </div>
+          <div id="cmsContent"></div>
+        </div>
+      </section>
+

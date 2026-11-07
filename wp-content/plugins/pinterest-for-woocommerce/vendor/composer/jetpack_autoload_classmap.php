@@ -18,4 +18,12 @@ return array(
 		'version' => '3.4.6.0',
 		'path'    => $vendorDir . '/automattic/jetpack-device-detection/src/class-user-agent-info.php'
 	),
+	'SomewhereWarm\\Changelogger\\Changelog_Entry' => array(
+		'version' => 'dev-trunk',
+		'path'    => $baseDir . '/tools/changelogger/class-changelog-entry.php'
+	),
+	'SomewhereWarm\\Changelogger\\Changelog_Formatter' => array(
+		'version' => 'dev-trunk',
+		'path'    => $baseDir . '/tools/changelogger/class-changelog-formatter.php'
+	),
 );

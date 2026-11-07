@@ -14,6 +14,13 @@ class TA_WC_Variation_Swatches_Frontend {
 	private $generalSettings, $archiveSettings, $productDesign, $shopDesign, $toolTipDesign;
 
 	/**
+	 * Number of radio swatches rendered in this request, used to keep their ids unique
+	 *
+	 * @var int
+	 */
+	private $radio_count = 0;
+
+	/**
 	 * Main instance
 	 *
 	 * @return TA_WC_Variation_Swatches_Frontend
@@ -525,10 +532,6 @@ class TA_WC_Variation_Swatches_Frontend {
 
 		$swatchShape = isset( $this->generalSettings['swatch-shape'] ) ? $this->generalSettings['swatch-shape'] : 'circle';
 
-		if ( $type == 'radio' && ! TA_WC_Variation_Swatches::is_pro_addon_active() ) {
-			$type = 'select';
-		}
-
 		$selectable_class = '';
 		if ( $this->is_keep_disabled_variation_selectable() &&
 		     $this->is_disabled_checking_availability() &&
@@ -606,14 +609,18 @@ class TA_WC_Variation_Swatches_Frontend {
 				break;
 			case 'radio':
 				$selected = ! empty( $selected ) ? 'checked' : '';
+				// The shop page can show the same option for several products, so the id
+				// that links the label to its radio must be unique on the page
+				$this->radio_count++;
+				$radio_id = 'tawcvs-radio-' . ( $product instanceof WC_Product ? $product->get_id() : 0 ) . '-' . $term->term_id . '-' . $this->radio_count;
 				$html = sprintf(
 					'<div class="swatch-item-wrapper swatch-radio ' . $selectable_class . $class .' "><input id="%s" class="swatch" data-value="%s" type="radio" name="%s" value="%s" %s /><label for="%s" class="text swatch-label" style="display:inline">%s</label>%s</div>',
-					esc_attr( $term->slug ),
+					esc_attr( $radio_id ),
 					esc_attr( $term->slug ),
 					'attribute_' . $term->taxonomy,
 					esc_attr( $term->slug ),
 					$selected,
-					esc_attr( $term->slug ),
+					esc_attr( $radio_id ),
 					esc_html( $term->name ),
 					$tooltip
 				);
@@ -681,7 +688,7 @@ class TA_WC_Variation_Swatches_Frontend {
 	 * @return bool
 	 */
 	public function is_show_label_enabled() {
-		if ( isset( $this->generalSettings['show-label-on-color-swatches'] ) && $this->generalSettings['show-label-on-color-swatches'] == 1 && TA_WC_Variation_Swatches::is_pro_addon_active() ) {
+		if ( isset( $this->generalSettings['show-label-on-color-swatches'] ) && $this->generalSettings['show-label-on-color-swatches'] == 1 ) {
 			return true;
 		} else {
 			return false;
@@ -701,24 +708,32 @@ class TA_WC_Variation_Swatches_Frontend {
 	public function get_tooltip_html( $html, $term, $name, $args ) {
 		if ( ! empty( $args['tooltip'] ) ) {
 
-            $is_pro_addon_activated = TA_WC_Variation_Swatches::is_pro_addon_active();
-			$show_tooltip = get_term_meta( $term->term_id, 'show-tooltip', true );
-			$show_tooltip = $show_tooltip === '' || ! $is_pro_addon_activated ? 1 : $show_tooltip;
+			// The per-option tooltip settings (show/hide, custom text, image) can only be edited in the Pro add-on.
+			// Without Pro the tooltip always shows the option name, whatever was saved while Pro was active.
+			$is_pro_addon_activated = TA_WC_Variation_Swatches::is_pro_addon_active();
+			$show_tooltip = $is_pro_addon_activated ? get_term_meta( $term->term_id, 'show-tooltip', true ) : '';
+			$show_tooltip = $show_tooltip === '' ? 1 : $show_tooltip;
 			$attribute_fee = '';
-			if ( $is_pro_addon_activated ) {
+			// The attribute fee is a Pro feature, its value comes from the Pro add-on
+			if ( $is_pro_addon_activated && is_callable( array( 'Woosuite_Variation_Swatches_Pro_Public', 'get_attribute_fee' ) ) ) {
 				$attribute_fee = Woosuite_Variation_Swatches_Pro_Public::get_attribute_fee( $term->term_id, get_the_ID() );
+			}
+			if ( $show_tooltip == 2 ) {
+				// image tooltip, or the text tooltip when the image no longer exists
+				$image = get_term_meta( $term->term_id, 'tooltip-image', true );
+				$image = wp_get_attachment_image_src( $image, 'thumbnail' );
+				if ( $image ) {
+					$html = '<span class="swatch__tooltip"><img src="' . esc_url( $image[0] ) . '" /></span>';
+				} else {
+					$show_tooltip = 1;
+				}
 			}
 			if ( $show_tooltip == 1 ) {
 				// get default tooltip label
-				$label = get_term_meta( $term->term_id, 'tooltip-text', true );
-				$label = ! empty( $label ) && $is_pro_addon_activated ? $label : $name;
+				$label = $is_pro_addon_activated ? get_term_meta( $term->term_id, 'tooltip-text', true ) : '';
+				$label = ! empty( $label ) ? wp_kses_post( $label ) : $name;
 				$label = $attribute_fee ? $label . ' (+' . $attribute_fee . ')' : $label;
 				$html  = '<span class="swatch__tooltip">' . $label . '</span>';
-			} elseif ( $show_tooltip == 2 ) {
-				// image tooltip
-				$image = get_term_meta( $term->term_id, 'tooltip-image', true );
-				$image = wp_get_attachment_image_src( $image, 'thumbnail' );
-				$html  = '<span class="swatch__tooltip"><img src="' . $image[0] . '" /></span>';
 			}
 		}
 

@@ -3,15 +3,15 @@
  * Plugin Name: Variation Swatches for WooCommerce
  * Plugin URI: https://aovup.com/plugins/woocommerce-variation-swatches/
  * Description: Creates variation swatches for WooCommerce, converts your variation dropdown into color, label, or photo swatches with ease, The original Variation Swatches for WooCommerce.
- * Version: 2.2.7
+ * Version: 2.2.9
  * Author: AovUp
  * Author URI: https://aovup.com/
  * Requires at least: 4.5
- * Tested up to: 6.9
+ * Tested up to: 7.1
  * Text Domain: wcvs
  * Domain Path: /languages
  * WC requires at least: 3.0.0
- * WC tested up to: 9.4.2
+ * WC tested up to: 11.2
  *
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -27,7 +27,7 @@ if ( ! defined( 'TAWC_VS_PLUGIN_FILE' ) ) {
 }
 
 if ( ! defined( 'WCVS_PLUGIN_VERSION' ) ) {
-	define( 'WCVS_PLUGIN_VERSION', '2.2.7' );
+	define( 'WCVS_PLUGIN_VERSION', '2.2.9' );
 }
 
 if ( ! defined( 'WCVS_PLUGIN_URL' ) ) {

@@ -1,4 +1,5 @@
 services:
+  # --- WORDPRESS STACK ---
   db:
     image: mariadb:10.11
     restart: always
@@ -41,23 +42,49 @@ services:
       - db
       - redis
 
-  # --- DỊCH VỤ TRÍ NHỚ CHO AI AGENT ---
-  graph-memory:
-    profiles: ["dev"] # Chỉ chạy khi được gọi đích danh
+  # --- AUTONOMOUS MARKETING MULTI-AGENT ENGINE ---
+  marketing-agent-engine:
     build:
-      context: ./graph-memory-service
-    restart: unless-stopped
+      context: ./dify-integration/agent-engine
+      dockerfile: Dockerfile
+    container_name: michinhhang-marketing-agent-1
+    restart: always
+    env_file:
+      - /home/ubuntu/michinhhang/dify-integration/.env
     ports:
-      - "3000:3000"
+      - "8085:8085"
     volumes:
-      - ./.memory:/root/.dsh/graph-memory
       - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/bin/docker:ro
+      - ./dify-integration/agent-engine:/app
+      - ./wp-content:/home/ubuntu/michinhhang/wp-content
+      - ./wp-content:/var/www/html/wp-content
+      - ./dify-integration/autopilot/campaigns:/app/../autopilot/campaigns
+    environment:
+      - WP_CONTAINER_NAME=michinhhang-wordpress-1
+      - ROUTER_URL=http://100.73.214.3:40128/v1/chat/completions
+    depends_on:
+      - wordpress
+    networks:
+      - default
+      - dify_net
 
-  # --- CLOUDFLARE TUNNEL ---
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    restart: unless-stopped
-    command: tunnel --no-autoupdate run --token eyJhIjoiZjk5ODdhMmMzZjNiMmRjMjkxYjFiM2IyMjJhYTE3ZjIiLCJ0IjoiN2Y1YzI0YjgtNmRiNC00NDhiLThjYzMtOGY1OGFjZjU5ZDcxIiwicyI6Ik56Z3lPR0pqTW1RdE1UQXdNaTAwT1RRNUxXRmxOR1l0WVdabE9HVm1ZVFkxT0RRell6Z3hOR0k0WldRdFptVTBNeTAwWW1VekxUZzJNMkV0WkdReE5HUXpNVFJrWWpBdyJ9
+  # --- CLOUDFLARE TUNNEL (Bật khi cần expose, dùng biến CLOUDFLARE_TUNNEL_TOKEN trong .env) ---
+  # cloudflared:
+  #   image: cloudflare/cloudflared:latest
+  #   restart: unless-stopped
+  #   command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+
+  # --- DIFY AI PORTAL ---
+  # Dify chạy độc lập với docker-compose riêng tại: ./dify/docker/
+  # Lệnh khởi động: cd dify/docker && docker compose up -d
+  # Port mặc định: 80 (Nginx), API: 5001
 
 volumes:
   db_data:
+
+networks:
+  default:
+  dify_net:
+    external: true
+    name: docker_default

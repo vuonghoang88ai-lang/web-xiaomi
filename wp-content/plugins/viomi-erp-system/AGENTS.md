@@ -18,11 +18,12 @@
   - **Sanitization (Input Data):** Mọi dữ liệu từ `$_POST`, `$_GET` trước khi xử lý phải đi qua `sanitize_text_field()`, `sanitize_textarea_field()`, hoặc `intval()`, `floatval()`.
   - **Đa ngôn ngữ (Translation Ready):** Khuyến khích bọc các chuỗi ký tự tĩnh hiển thị cho người dùng vào hàm `__()` hoặc `_e()` với text domain là `'mi-erp-system'`.
 
-## 2. Kiến trúc CSDL (Database Schema)
+## 2. Kiến trúc CSDL (Database Schema - 11 Bảng CSDL)
 - **Bảng chính:** 
   - `wp_mi_serials` (Quản lý mã Serial).
+  - `wp_mi_inventory_logs` (Lưu lịch sử thay đổi trạng thái và vết xuất/nhập/chuyển kho/mã Serial).
   - `wp_mi_warehouses` (Quản lý các kho chứa).
-  - `wp_mi_inventory_transactions` (Lưu vết xuất/nhập/chuyển kho).
+  - `wp_mi_inventory_transactions` (Lưu vết giao dịch xuất/nhập/chuyển kho).
   - `wp_mi_tickets` (Quản lý khiếu nại, bảo hành, RMA).
   - `wp_mi_transactions` (Sổ quỹ Tài chính - Thu/Chi).
   - `wp_mi_suppliers` (Danh sách Nhà cung cấp).
@@ -37,15 +38,53 @@
   - `order_id` (int): Liên kết tới WooCommerce Order (khi đã bán).
   - `sold_date` (datetime): Ngày kích hoạt / xuất kho.
 
-## 3. Quy chuẩn Frontend & Giao diện
-- **Kiến trúc Modular 6 phân hệ (Đã hoàn thiện):** Toàn bộ 6 giai đoạn ERP đã được đóng gói thành công tại `includes/modules/`. Các module bao gồm: 
-  - `scm` (Kho, Serial)
-  - `crm` (Khách hàng, RMA)
-  - `finance` (Tài chính, Sổ quỹ)
-  - `procurement` (Mua hàng, PO)
-  - `hrm` (Nhân sự, Lương thưởng)
-  - `manufacturing` (Sản xuất, BOM).
-  Mỗi module đều có file `{module}-init.php`, thư mục `views/` và `class-{module}-ajax.php`. Tích hợp giao diện Dashboard tổng qua file `includes/admin/views/html-dashboard.php`.
+## 3. Quy chuẩn Frontend & Hệ Thống 10 Giao Diện Quản Trị (UI/UX Dashboards)
+- **Kiến trúc Modular 8 phân hệ cốt lõi (Đã hoàn thiện):** Toàn bộ 8 phân hệ ERP đã được đóng gói thành công tại `includes/modules/`. Mỗi module đều có file `{module}-init.php`, thư mục `views/` và `class-{module}-ajax.php`. Tích hợp giao diện Dashboard tổng qua file `includes/admin/views/html-dashboard.php`.
+- **Chi tiết 10 Màn Hình Giao Diện Nghiệp Vụ Cốt Lõi:**
+  1. **Bán Hàng Nhanh Tại Quầy (POS Dashboard - `pos/views/pos-dashboard.php`)**:
+     - *Bố cục 2 Cột Chuẩn Bán Lẻ Hiện Đại*: Cột trái quản lý Khách hàng & Điều phối vận chuyển; Cột phải quản lý Giỏ hàng, Quét Serial & Thanh toán.
+     - *Phân Cấp Địa Chỉ 3 Cấp*: Tỉnh/Thành (`#pos_customer_province`), Quận/Huyện (`#pos_customer_district`), Phường/Xã (`#pos_customer_ward`) và Số nhà tên đường (`#pos_customer_street`).
+     - *Tích Hợp Bản Đồ Leaflet / OSM & Đo Khoảng Cách Tự Động*: Nút `#pos_calc_distance_btn` mở bản đồ tương tác `#pos-map`, tự động tính khoảng cách giao hàng từ Kho xuất hàng (`#pos_origin_warehouse` từ `wp_mi_warehouses`) đến địa chỉ khách hàng.
+     - *Chính Sách Phí Vận Chuyển Động*: **Miễn phí 20km đầu tiên**, từ km thứ 21 trở đi tự động tính **10.000đ/km**.
+     - *Chọn Nhân Viên & Tính Hoa Hồng*: Dropdown `#pos_sales_employee` liên kết trực tiếp với cơ chế tính hoa hồng động của phân hệ HRM.
+     - *Quét Serial Trực Tiếp & Tạo Đơn Siêu Tốc*: Hỗ trợ quét mã vạch/Serial trực tiếp tại quầy, tự động trừ kho, đổi trạng thái Serial thành `sold`, tạo đơn hàng WooCommerce và đồng bộ ngay vào sổ quỹ Finance.
+  2. **Quản Lý Tồn Kho & Xuất Nhập (SCM Inventory - `scm/views/inventory-dashboard.php`)**:
+     - *Hệ Thống 4 Tabs Nghiệp Vụ*:
+       - Tab 1: *Danh Sách Tồn Kho (`tab-list`)*: Bảng dữ liệu theo thời gian thực hiển thị Sản phẩm, Mã Serial, Vị trí kho và Trạng thái.
+       - Tab 2: *Nhập Kho Inbound (`tab-inbound`)*: Chọn Kho, Sản phẩm WooCommerce, Giá nhập (lưu thành Giá vốn Cost of Goods để tính KPI). Hỗ trợ nhập Serial hàng loạt qua textarea hoặc tải file `.txt` tự động đọc qua `FileReader`.
+       - Tab 3: *Chuyển Kho Transfer (`tab-transfer`)*: Điều phối luồng hàng giữa các kho, quét mã Serial, lưu vết lịch sử giao dịch.
+       - Tab 4: *Xuất Kho Outbound (`tab-outbound`)*: Xử lý xuất hàng cho mục đích xuất hủy, bảo hành hoặc hàng mẫu.
+  3. **Quản Lý Hệ Thống Kho Hàng Master (SCM Warehouse - `scm/views/warehouse-dashboard.php`)**:
+     - Quản trị danh mục kho vật lý (Tên kho, Địa chỉ, Trạng thái hoạt động active/inactive).
+     - Đóng vai trò là **Master Data duy nhất** của hệ thống kho cho tất cả phân hệ (POS, Orders, SCM) truy vấn đồng bộ, loại bỏ phân mảnh dữ liệu (BUG-014).
+  4. **Quản Lý Khách Hàng & CRM (Customer Dashboard - `crm/views/customer-dashboard.php`)**:
+     - *Tra cứu khách hàng 1-chạm* qua Số điện thoại (`#crm-phone`).
+     - *Thẻ Hồ Sơ Khách Hàng*: Hiển thị Họ tên, SĐT, Địa chỉ và Tổng chi tiêu tích lũy (Lifetime Value - LTV).
+     - *Lịch Sử Thiết Bị & Bảo Hành*: Bảng tra cứu toàn bộ mã Serial khách đã mua, đơn hàng liên kết, ngày kích hoạt và trạng thái bảo hành (Còn hạn / Hết hạn).
+     - *Hệ Thống Vé Khiếu Nại & RMA (Ticket System)*: Bảng theo dõi vé bảo hành kèm Modal tạo Ticket mới, phân công kỹ thuật viên, theo dõi tiến trình sửa chữa (`open`, `in_progress`, `resolved`, `closed`).
+  5. **Giao Diện Tra Cứu Bảo Hành Cho Khách Hàng (Warranty Shortcode - `crm/views/warranty-shortcode.php`)**:
+     - Giao diện tra cứu công khai phía frontend nhúng qua shortcode `[mi_warranty_check]` (container bo góc `rounded-xl`, shadow nhẹ).
+     - Tra cứu tức thời qua **Số điện thoại** hoặc **Mã Serial/IMEI**, hiển thị thẻ kết quả với badge trạng thái (Còn bảo hành màu xanh / Hết bảo hành màu đỏ), ngày mua và hạn bảo hành.
+  6. **Sổ Quỹ Tài Chính & Thu Chi (Finance Dashboard - `finance/views/finance-dashboard.php`)**:
+     - *3 Thẻ Chỉ Số Tài Chính Thời Gian Thực*: Tổng Doanh Thu (`#fin-total-income` viền xanh lá), Tổng Chi Phí (`#fin-total-expense` viền đỏ), Lợi Nhuận Ròng (`#fin-net-profit` viền xanh dương).
+     - *Nút Đồng Bộ Đơn Hàng Cũ (`#btn-sync-finance`)*: Tự động quét các đơn hàng hoàn thành trong quá khứ qua `wc_get_orders()` để ghi nhận bổ sung doanh thu (khắc phục BUG-012).
+     - *Sổ Quỹ Tiền Mặt & Ngân Hàng*: Bảng nhật ký giao dịch tài chính (`wp_mi_transactions`) kèm Modal ghi chép thu/chi phát sinh ngoài đơn hàng.
+  7. **Mua Hàng & Nhà Cung Cấp (Procurement Dashboard - `procurement/views/procurement-dashboard.php`)**:
+     - *Quản Lý Danh Bạ Nhà Cung Cấp*: Bảng DataTables đối tác cung ứng kèm Form thêm mới (Tên, SĐT, Email).
+     - *Quản Lý Đơn Đặt Hàng (PO)*: Form tạo PO mới chọn Nhà cung cấp, nhập tổng tiền ước tính, theo dõi tiến trình giao hàng.
+     - *Liên Thông Tự Động*: Khi PO chuyển sang trạng thái `received`, hệ thống tự động sinh phiếu chi trong Finance và nhập mã serial vào kho SCM.
+  8. **Quản Lý Nhân Sự, Phân Quyền & Bảng Lương (HRM Dashboard - `hrm/views/hrm-dashboard.php`)**:
+     - *Hệ Thống 4 Tabs Chuyên Biệt*:
+       - Tab 1: *Hiệu suất & Lương (KPIs)*: Bộ lọc theo phòng ban, trạng thái làm việc, chọn tháng/kỳ tính lương (`input type="month"`). Bảng tính lương tự động: Doanh thu bán, Giá vốn, Phí ship, Lương cứng, Hoa hồng, Khấu trừ/Tạm ứng (nhập trực tiếp), Thực nhận.
+       - Tab 2: *Cài đặt Cơ chế Lương*: Thiết lập Lương cơ bản (`_mi_erp_base_salary`), Tỷ lệ hoa hồng (`_mi_erp_commission_rate`), cách tính (% Doanh thu hoặc % Lợi nhuận gộp).
+       - Tab 3: *Quản lý Nhân sự*: Modal thêm/sửa nhân viên, tùy chọn "Không tính lương" (`_mi_erp_exclude_payroll`), phân quyền Module động qua checkboxes (SCM, POS, Finance, HRM, Procurement, Manufacturing, Orders).
+       - Tab 4: *Phòng ban & Cơ cấu*: Quản lý danh mục phòng ban động (lưu trữ trong `wp_options`).
+  9. **Lệnh Sản Xuất & Lắp Ráp (Manufacturing - `manufacturing/views/manufacturing-dashboard.php`)**:
+     - Quản lý danh sách Lệnh sản xuất (Work Orders - WO), chọn ID sản phẩm WooCommerce thành phẩm và số lượng cần đóng gói/lắp ráp.
+     - *Tự Động Trừ Kho & Nhập Thành Phẩm*: Khi WO chuyển trạng thái `completed`, tự động trừ các linh kiện tiêu hao (`consumed`) theo định mức BOM và sinh thành phẩm mới nhập kho SCM.
+  10. **Điều Phối Đơn Hàng & Gán Serial (Orders Dashboard - `orders/views/orders-dashboard.php`)**:
+      - Bảng điều khiển DataTables tập trung theo dõi trạng thái xuất Serial cho tất cả đơn hàng WooCommerce.
+      - Modal gán mã Serial (`#mi-erp-assign-modal`): Cho phép nhân viên kho chọn hoặc quét mã Serial có sẵn trong kho tương ứng cho từng mặt hàng trong đơn hàng trước khi đóng gói bàn giao vận chuyển.
 - **Chuẩn hóa Giao diện (TailwindCSS & UX):** Tuyệt đối **không sử dụng CSS inline** (`style="..."`). Toàn bộ giao diện (bao gồm `html-dashboard.php` và các file `views/`) phải được xây dựng bằng TailwindCSS. Áp dụng Responsive (Flex/Grid) và các hiệu ứng tương tác nhỏ (Micro-Interactions như `hover:`, `focus:`) để tăng tính cao cấp.
 - **Trạng thái xử lý (Loading States & Feedback):** Mọi thao tác AJAX (Submit form, tải dữ liệu) phải đi kèm hiệu ứng Loading (Spinner/Skeleton) và vô hiệu hóa nút bấm tạm thời. Kết quả trả về phải được hiển thị qua Toast Message hoặc Alert Box rõ ràng thay vì chỉ in lỗi ra console.
 - **Shortcode Tra cứu Bảo hành:** `[mi_warranty_check]`
@@ -80,6 +119,17 @@
 - **LESSON-06 (Cơ cấu Phòng ban & Phân quyền Module động):** Tuyệt đối KHÔNG hardcode danh sách phòng ban trong mã nguồn, vì mỗi doanh nghiệp sẽ có cấu trúc riêng. Danh sách phòng ban phải được người dùng cấu hình động (lưu vào `wp_options`). Việc phân quyền truy cập các module ERP (POS, Kho, Kế toán...) KHÔNG phụ thuộc hoàn toàn vào phòng ban hay Role, mà phải dùng cơ chế checkbox tick chọn từng quyền độc lập cho mỗi user (lưu thành mảng meta `_mi_erp_permissions` và ánh xạ sang WordPress Capabilities).
 - **LESSON-07 (Tài khoản không tính lương trong HRM):** Đối với các tài khoản Admin hoặc nhân viên đặc thù không nhận lương qua hệ thống ERP nhưng vẫn phải có mặt trong danh sách quản lý nhân sự, cần thiết lập User Meta `_mi_erp_exclude_payroll = 1` (Thông qua UI checkbox "Không tính lương" ở Modal Thêm/Sửa). Khi meta này được bật, các hàm API sẽ dùng lệnh `continue` để bỏ qua nhân viên đó khỏi danh sách đổ ra bảng KPI & Cài đặt lương, nhưng vẫn giữ lại họ ở bảng Quản lý Nhân sự để có thể thao tác phân quyền.
 - **BUG-18 (Lỗi Corrupted Tailwind Binary):** Nếu khi biên dịch Tailwind qua Docker CLI gặp lỗi `Bus error (core dumped)` hoặc file thực thi `tailwindcss-linux-x64` có dung lượng quá nhỏ (khoảng 3MB), điều đó chứng tỏ file nhị phân đã bị hỏng. Cách giải quyết: Copy lại file thực thi chuẩn (khoảng ~40MB) từ theme sang và cấp quyền thực thi `chmod +x` trước khi build lại.
+- **BUG-19 (Lỗi 404 Stylesheet do lùi thư mục quá sâu bằng dirname):** Trong `class-mi-erp-frontend.php`, việc gọi `plugins_url( 'assets/css/style.css', dirname( __FILE__, 2 ) )` làm WordPress hiểu sai đường dẫn gốc của plugin, sinh ra URL `/wp-content/assets/css/style.css` (bị mất thư mục plugin `viomi-erp-system`) dẫn tới lỗi 404 cho giao diện tra cứu bảo hành. Cách giải quyết: Sử dụng đường dẫn tương đối trực tiếp từ file hiện tại bằng `__FILE__`: `plugins_url( '../../assets/css/style.css', __FILE__ )`.
+- **BUG-20 (Lỗ hổng thực thi tùy tiện trong Installer CSDL):** File `install-db.php` kích hoạt khởi tạo bảng CSDL ERP nhưng thiếu kiểm tra quyền quản trị, có thể bị kích hoạt ngoài ý muốn nếu bị require hoặc gọi qua ngữ cảnh không phù hợp. Cách giải quyết: Luôn bọc điều kiện kiểm tra `if ( ! current_user_can( 'manage_options' ) && ! ( defined( 'WP_CLI' ) && WP_CLI ) ) wp_die(...)`.
+- **LESSON-08 (Không lưu trữ file nhị phân nặng & file backup trong Repo):** Các file nhị phân độc lập như `tailwindcss-linux-x64` (~40MB - 80MB) và `wp-cli.phar` (~7MB) cùng các file sao lưu CSDL `.sql`, `.tar.gz` tuyệt đối không được đưa vào Git Repo. Chúng làm phình kích thước repo, gây chậm tiến trình clone/pull và tiềm ẩn nguy cơ lộ dữ liệu sản phẩm/khách hàng. Bắt buộc phải đưa vào `.gitignore` và chỉ chạy build/quản lý thông qua Docker container.
+- **BUG-21 (Xung đột Schema JSON-LD đa nguồn giữa Plugin ERP và Plugin SEO):** Plugin ERP có class `Mi_ERP_SEO_Schema` tự động render schema `Article` và `BreadcrumbList` độc lập vào `wp_head`. Khi trang web cài đặt plugin SEO chuyên nghiệp (Rank Math), website bị xuất hiện 2 khối JSON-LD cạnh tranh nhau, dẫn đến cảnh báo lỗi cấu trúc nghiêm trọng từ Google Search Console. Cách giải quyết: Thêm điều kiện kiểm tra ở đầu hàm `render_schema()`: nếu phát hiện `defined('RANK_MATH_VERSION') || function_exists('rank_math') || defined('WPSEO_VERSION')`, ERP phải lập tức `return` sớm để nhường toàn quyền sinh Schema cho plugin SEO.
+- **BUG-22 (Trùng lặp khai báo Action Hook AJAX):** Trong constructor của các lớp AJAX (như `class-procurement-ajax.php`), việc copy hoặc khai báo lặp lại cùng một action `wp_ajax_mi_erp_add_supplier` hai lần liên tiếp khiến WordPress đăng ký callback 2 lần vào mảng toàn cục `$wp_filter`. Khi hook được kích hoạt, callback có thể bị chạy đúp hoặc tiêu tốn bộ nhớ vô ích. Cách giải quyết: Rà soát và loại bỏ các dòng `add_action` bị trùng lặp.
+- **LESSON-09 (Quy chuẩn Audit Toàn Diện Mã Nguồn ERP):** Khi audit plugin ERP độc lập kết hợp WooCommerce, cần thực hiện quy trình 4 bước chuẩn:
+  1. *Phân tích tĩnh cú pháp (Static Lint):* Chạy `find ... -name "*.php" -exec php -l {} \;` trong Docker container đảm bảo 100% không có lỗi PHP syntax trên toàn bộ 39 tệp mã nguồn.
+  2. *Kiểm tra CSDL thực tế (Database Schema Verification):* Query trực tiếp vào MariaDB (`SHOW TABLES LIKE 'wp_mi_%'`) để đối chiếu đầy đủ 11/11 bảng CSDL thực tế.
+  3. *Kiểm tra cơ chế bảo mật (Security Penetration Test):* Gửi POST request không Nonce tới `admin-ajax.php` để xác thực phản hồi `-1` (Permission denied).
+  4. *Kiểm tra liên thông liên phân hệ (Cross-Module Workflows):* Đối soát logic tự động hóa (PO `received` ➔ sinh chi phí Finance + sinh serial SCM; Lệnh sản xuất `completed` ➔ trừ linh kiện `consumed` + nhập kho thành phẩm SCM).
+
 
 ## 5. Quyền hạn & Admin (Security & Menu)
 - **Capability Check:** Mọi request AJAX thuộc admin panel ngoài việc check `nonce` (`mi_erp_admin_nonce`) bắt buộc phải kiểm tra quyền bằng `if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Permission denied' );`.
@@ -99,6 +149,7 @@
     - **Trên 20km**: Nếu nhân viên chủ động giảm phí ship cho khách (VD: Ship thực tế 200k nhưng chỉ thu 100k), khoản chênh lệch (100k) bắt buộc phải trừ thẳng vào lợi nhuận cuối cùng của nhân viên đó trong kỳ đánh giá KPI.
 - **Order Automation:** Tính năng tự động bốc kho và gán Serial hiện đang bị **TẮT** (chuyển sang gán thủ công qua admin). Các module mới không được phép can thiệp tự động đổi trạng thái serial sang `sold` nếu không thông qua flow gán thủ công.
 - **Cross-module Automation:** Khi hoàn tất thủ tục liên phòng ban (Ví dụ: Đơn đặt hàng PO chuyển sang `received`, hoặc Lệnh sản xuất chuyển sang `completed`), hệ thống PHẢI tự động kích hoạt logic phát sinh dữ liệu ở các module liên quan (Như sinh giao dịch trừ tiền ở Finance, tạo Serial tự động và cộng kho ở SCM) để đảm bảo tính toàn vẹn.
+  - **Dynamic Warehouse Resolution:** Tuyệt đối không hardcode ID kho (ví dụ `warehouse_id = 1`) khi sinh Serial tự động từ PO hoặc Lệnh Sản Xuất, mà luôn truy vấn kho đang kích hoạt từ `wp_mi_warehouses` (`WHERE status = 'active' ORDER BY id ASC LIMIT 1`) với fallback ID 2 (Kho HĐ1) để chống lỗi mồ côi Serial (Orphaned Serials).
 
 ## 7. Nghiệp vụ nâng cao (POS & Shipping)
 - **Tạo đơn POS (Manual Order):** Khi tạo đơn trực tiếp, bắt buộc dùng hàm chuẩn `wc_create_order()`. Phí vận chuyển được thêm qua object `WC_Order_Item_Fee`. Cần chuyển trạng thái đơn sang `processing` sau khi tạo để thống nhất luồng.
@@ -106,7 +157,9 @@
 
 ## 8. Tài liệu tham chiếu (References)
 Để hiểu rõ bối cảnh, lịch sử phát triển và kiến trúc ban đầu của hệ thống, vui lòng tham khảo các tài liệu sau:
+- [Hướng dẫn Vận Hành & Kiến Trúc Module (README.md)](./README.md): Hướng dẫn cài đặt, danh sách 8 modules và cấu trúc 11 bảng CSDL MariaDB.
 - [Kiến trúc & Kế hoạch (Architecture & Development Plan)](./docs/erp-architecture.md): Bản thiết kế toàn diện 5 giai đoạn (Stages) hình thành nên bộ khung lõi của hệ thống.
 - [Lộ trình Hybrid ERP (Hybrid Architecture Plan)](./docs/hybrid-erp-plan.md): Bản phác thảo giai đoạn 1 (Planning) tập trung vào các bài toán nền tảng như Menu, Form nhập kho và Hook sự kiện.
 - [Hướng dẫn sử dụng (User Manual)](./docs/user-manual.md): Tài liệu hướng dẫn sử dụng các tính năng hiện có của ERP.
 - [Cấu trúc Tương lai (Future Architecture)](./docs/future-architecture.md): Bản nháp mô hình MVC chuẩn phục vụ cho việc tái cấu trúc (Refactor) khi thương mại hóa dự án.
+- [Master System Architecture Guide](../../../.gemini/antigravity-ide/knowledge/michinhhang_wordpress_architecture/artifacts/architecture.md): Toàn cảnh kiến trúc toàn hệ thống Michinhhang.

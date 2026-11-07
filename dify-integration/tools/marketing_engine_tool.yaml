@@ -1,0 +1,547 @@
+openapi: 3.0.0
+info:
+  title: Autonomous Marketing Engine Tool
+  description: Cánh tay nối dài trinh sát SERP DuckDuckGo đã xác minh, bóc tách giá thực tế, tiếp cận dự án mới và xuất bản bài viết WordPress cho Dify
+  version: 3.0.0
+servers:
+  - url: https://seo.vuonghoang.name.vn
+    description: Marketing Engine Production FQDN Gateway
+  - url: http://marketing-agent-engine:8085
+    description: Marketing Engine Docker Internal Network
+  - url: http://172.20.0.1:8085
+    description: Marketing Engine Local Host Gateway
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/onboarding/analyze:
+    post:
+      summary: Tiếp cận dự án mới và trinh sát kết quả SERP
+      description: Bóc tách website, tìm kết quả thực từ DuckDuckGo, kiểm tra khả năng truy cập, phân tích UVP và lưu hồ sơ theo tenant vào PostgreSQL và Dify RAG. Số đối thủ có thể ít hơn 10; không tự tạo kết quả thiếu.
+      operationId: analyzeProjectOnboarding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - target_website_url
+              properties:
+                tenant_id:
+                  type: string
+                  format: uuid
+                  description: UUID tenant do hệ thống cấp; dùng để lưu dự án đúng doanh nghiệp
+                target_website_url:
+                  type: string
+                  description: URL website/landing page của dự án cần phát triển; hỗ trợ mọi ngành nghề và CMS.
+                business_description:
+                  type: string
+                  description: Mô tả mục đích xây dựng web, sản phẩm và dịch vụ cốt lõi
+                seed_competitor_url:
+                  type: string
+                  nullable: true
+                  description: URL đối thủ mẫu tùy chọn; nếu bỏ trống hệ thống chỉ dùng các URL đối thủ tìm được và đã xác minh từ SERP.
+                target_location:
+                  type: string
+                  description: Khu vực thị trường địa lý mục tiêu (ví dụ 'Hà Nội', 'TP.HCM', 'Toàn quốc')
+                  default: ''
+                core_strengths:
+                  type: string
+                  description: Điểm mạnh độc quyền của bạn (UVP). Cho phép để trống để AI tự động phân tích điểm mù đối thủ và gợi ý phương án tối ưu.
+                  default: ''
+                brand_logo_url:
+                  type: string
+                  description: "URL Logo thương hiệu của bạn (PNG/SVG/JPG). Tùy chọn: nếu để trống, Agent sẽ tự động thu thập logo từ website của bạn theo 3 tầng: apple-touch-icon → img[logo] → Google Favicon API."
+                  default: ''
+                target_audience:
+                  type: string
+                  description: Khách hàng mục tiêu chính
+                primary_offers:
+                  type: string
+                  description: Sản phẩm hoặc dịch vụ chủ lực
+                conversion_goal:
+                  type: string
+                  description: Mục tiêu chuyển đổi chính
+                brand_voice:
+                  type: string
+                  description: Giọng điệu thương hiệu mong muốn
+                claims_evidence:
+                  type: string
+                  description: Bằng chứng xác thực cho các tuyên bố marketing
+                compliance_constraints:
+                  type: string
+                  description: Giới hạn pháp lý/ngành hàng và điều cần tránh
+                target_language:
+                  type: string
+                  description: Mã ngôn ngữ nội dung, ví dụ vi, en, th, ja.
+                  default: vi
+                industry:
+                  type: string
+                  description: Ngành hoặc lĩnh vực kinh doanh do khách hàng cung cấp.
+                offer_type:
+                  type: string
+                  description: Loại đối tượng marketing, ví dụ product, service, SaaS, content, marketplace.
+      responses:
+        '200':
+          description: Kết quả phân tích tiếp cận dự án và ma trận đối thủ thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [complete, partial]
+                  persistence:
+                    type: object
+                    properties:
+                      postgresql:
+                        type: string
+                      rag:
+                        type: string
+                  project_id:
+                    type: string
+                  dify_dataset_id:
+                    type: string
+                  resolved_logo_url:
+                    type: string
+                    description: URL logo đã được giải quyết (do người dùng cung cấp hoặc tự động cào từ website)
+                  suggested_uvp_options:
+                    type: array
+                  top_10_competitors:
+                    type: array
+                  strategic_report:
+                    type: string
+
+  /api/v1/research:
+    post:
+      summary: Trinh sát đối thủ và giá bán thực tế
+      description: Cào dữ liệu sản phẩm từ URL đối thủ được cung cấp; nếu không có kết quả thực, trả no_results thay vì dữ liệu giả.
+      operationId: researchCompetitor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - keyword
+              properties:
+                tenant_id:
+                  type: string
+                  format: uuid
+                  description: Tenant sở hữu project; bắt buộc khi truyền project_id.
+                keyword:
+                  type: string
+                  description: Từ khóa, tên sản phẩm, dịch vụ hoặc chủ đề cần trinh sát.
+                custom_competitor_urls:
+                  type: array
+                  maxItems: 6
+                  items:
+                    type: string
+                    format: uri
+                  description: URL website đối thủ thật đã thu thập từ SERP; truyền vào để scrape trực tiếp
+      responses:
+        '200':
+          description: Kết quả trinh sát đối thủ; có thể trả trạng thái no_results nếu không có dữ liệu thực
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  keyword:
+                    type: string
+                  data:
+                    type: object
+
+  /api/v1/campaign:
+    post:
+      summary: Kích hoạt chiến dịch viết bài SEO và xuất bản WordPress
+      description: Khởi chạy chuỗi đa tác nhân tự động cào đối thủ, viết bài chuẩn SOP 12 và xuất bản bài viết nháp lên WordPress.
+      operationId: triggerSeoCampaign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - keyword
+              properties:
+                tenant_id:
+                  type: string
+                  format: uuid
+                  description: Tenant sở hữu project; bắt buộc khi truyền project_id.
+                keyword:
+                  type: string
+                  description: Từ khóa SEO mục tiêu
+                category:
+                  type: string
+                  description: Danh mục sản phẩm/dịch vụ
+                  default: ''
+                post_type:
+                  type: string
+                  description: Loại hình bài viết ('post' cho SEO Blog hoặc 'product' cho trang chi tiết WooCommerce)
+                  default: 'post'
+                project_id:
+                  type: string
+                  description: UUID của dự án từ Bước 1 Onboarding. Toàn bộ dàn Agent con sẽ tự động đọc đúng UVP và 10 đối thủ của dự án từ PostgreSQL để sản xuất bài viết.
+                publish_to_wp:
+                  type: boolean
+                  description: Có tự động xuất bản lên WordPress hay không
+                  default: false
+                async_mode:
+                  type: boolean
+                  description: Bật true để nhận job_id ngay (chống timeout), bật false để đợi kết quả bài viết
+                  default: false
+                brand_name:
+                  type: string
+                  description: Tên thương hiệu dùng cho chiến dịch thử nghiệm khi không truyền project_id.
+                target_website_url:
+                  type: string
+                  format: uri
+                  description: Website đích dùng cho chiến dịch thử nghiệm khi không truyền project_id.
+                target_location:
+                  type: string
+                  description: Khu vực thị trường tùy chọn của chiến dịch.
+                business_description:
+                  type: string
+                  description: Mô tả sản phẩm/dịch vụ và mục tiêu kinh doanh.
+                brand_profile:
+                  type: object
+                  description: Hồ sơ thương hiệu chuẩn hóa; dùng project_id là cách khuyến nghị.
+      responses:
+        '200':
+          description: Kết quả tạo chiến dịch thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  job_id:
+                    type: string
+                  project_id:
+                    type: string
+                  result:
+                    type: object
+
+  /api/v1/campaign/product:
+    post:
+      summary: Đăng trang chi tiết sản phẩm WooCommerce chuẩn UECS (Độc quyền & Specs sạch)
+      description: Worker chuyên biệt tạo sản phẩm WooCommerce. Tự động bóc tách 25-35 thông số kỹ thuật định lượng sạch cho ACF Repeater, phân tích 6 trụ cột UECS, định giá và xuất bản WooCommerce product.
+      operationId: createWooCommerceProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - keyword
+              properties:
+                tenant_id:
+                  type: string
+                  format: uuid
+                  description: Tenant sở hữu project.
+                keyword:
+                  type: string
+                  description: Tên model hoặc từ khóa sản phẩm mục tiêu (ví dụ 'Tivi Xiaomi S Mini LED 98 inch')
+                category:
+                  type: string
+                  description: Chuyên mục sản phẩm WooCommerce (ví dụ 'Tivi Xiaomi')
+                  default: ''
+                project_id:
+                  type: string
+                  description: UUID của dự án để nạp UVP và đối thủ từ PostgreSQL
+                publish_to_wp:
+                  type: boolean
+                  description: Tự động xuất bản lên WooCommerce
+                  default: true
+                async_mode:
+                  type: boolean
+                  description: Bật true để nhận job_id ngay (chống timeout)
+                  default: false
+      responses:
+        '200':
+          description: Kết quả tạo sản phẩm WooCommerce thành công
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/v1/campaign/article:
+    post:
+      summary: Viết bài viết SEO Blog / Tin tức / Cẩm nang chuẩn 10x Editorial Architecture
+      description: Worker chuyên biệt viết bài viết Blog, tin tức, cẩm nang tư vấn và đánh giá chuyên sâu (1.500 - 2.500 từ). Chống sáo rỗng AI, bóc tách lầm tưởng, có ma trận đối sánh và 5 FAQ.
+      operationId: writeSeoArticle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - keyword
+              properties:
+                tenant_id:
+                  type: string
+                  format: uuid
+                  description: Tenant sở hữu project.
+                keyword:
+                  type: string
+                  description: Từ khóa SEO mục tiêu cho bài viết (ví dụ 'Kinh nghiệm chọn tivi cho phòng khách lớn')
+                category:
+                  type: string
+                  description: Chuyên mục tin tức / blog
+                  default: 'Tin tức'
+                project_id:
+                  type: string
+                  description: UUID của dự án để nạp UVP từ PostgreSQL
+                publish_to_wp:
+                  type: boolean
+                  description: Tự động xuất bản bài viết lên WordPress
+                  default: true
+                async_mode:
+                  type: boolean
+                  description: Bật true để nhận job_id ngay (chống timeout)
+                  default: false
+      responses:
+        '200':
+          description: Kết quả viết bài viết Blog SEO thành công
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/v1/campaign/batch:
+    post:
+      summary: Kích hoạt chiến dịch viết bài hàng loạt (Async Queue)
+      description: Nhận danh sách sản phẩm/từ khóa, xử lý bất đồng bộ ngầm và tự động nạp trí tuệ dự án từ PostgreSQL.
+      operationId: triggerBatchCampaign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - items
+              properties:
+                tenant_id:
+                  type: string
+                  format: uuid
+                  description: Tenant sở hữu project; bắt buộc khi truyền project_id.
+                items:
+                  type: array
+                  description: Danh sách từ khóa hoặc sản phẩm
+                default_category:
+                  type: string
+                  default: ''
+                post_type:
+                  type: string
+                  default: 'post'
+                publish_to_wp:
+                  type: boolean
+                  default: false
+                project_id:
+                  type: string
+                  description: UUID của dự án
+      responses:
+        '200':
+          description: Đã tiếp nhận xử lý hàng loạt
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  job_id:
+                    type: string
+                  project_id:
+                    type: string
+                  total_items:
+                    type: integer
+                  message:
+                    type: string
+
+  /api/v1/saas/projects/{project_id}:
+    get:
+      summary: Tra cứu hồ sơ trí tuệ của một dự án
+      description: Chỉ trả hồ sơ nếu project_id thuộc tenant_id được truyền vào.
+      operationId: getProjectIntelligence
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: UUID của dự án
+        - name: tenant_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Tenant sở hữu dự án
+      responses:
+        '200':
+          description: Hồ sơ trí tuệ của dự án
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  project:
+                    type: object
+                  competitors:
+                    type: array
+                  latest_report:
+                    type: object
+
+  /api/v1/saas/projects/{project_id}/select-uvp:
+    post:
+      summary: Chọn và phê duyệt phương án UVP tối ưu
+      description: Chỉ chấp nhận UVP ID tồn tại hoặc nội dung tùy chỉnh; project phải thuộc tenant_id được truyền vào.
+      operationId: selectProjectUvp
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: UUID của dự án
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tenant_id
+              properties:
+                tenant_id:
+                  type: string
+                  format: uuid
+                selected_uvp_id:
+                  type: integer
+                  description: ID của phương án UVP (1, 2, 3, 4)
+                custom_uvp_text:
+                  type: string
+                  description: Tùy chỉnh text định vị nếu muốn ghi đè
+      responses:
+        '200':
+          description: UVP đã lưu; kiểm tra persistence để xác nhận đồng bộ RAG
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  project_id:
+                    type: string
+                  selected_uvp:
+                    type: string
+
+  /api/v1/projects/{project_id}/gsc/connect:
+    get:
+      summary: Tạo URL cấp quyền Google Search Console
+      description: Trả URL OAuth readonly; người dùng vẫn phải tự chấp thuận quyền trên Google.
+      operationId: connectGsc
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          schema: {type: string}
+        - name: tenant_id
+          in: query
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: URL OAuth hoặc trạng thái đã sở hữu kết nối
+
+  /api/v1/projects/{project_id}/gsc/connections:
+    get:
+      summary: Liệt kê kết nối GSC của dự án
+      operationId: listGscConnections
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          schema: {type: string}
+        - name: tenant_id
+          in: query
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Danh sách kết nối GSC
+
+  /api/v1/projects/{project_id}/gsc/performance:
+    post:
+      summary: Truy vấn hiệu suất Google Search Console
+      description: Chỉ chạy khi Marketing Engine đã sở hữu kết nối GSC active.
+      operationId: queryGscPerformance
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tenant_id, start_date, end_date]
+              properties:
+                tenant_id: {type: string, format: uuid}
+                property_uri: {type: string}
+                start_date: {type: string, format: date}
+                end_date: {type: string, format: date}
+                dimensions:
+                  type: array
+                  items: {type: string}
+                row_limit: {type: integer, minimum: 1, maximum: 25000, default: 25000}
+      responses:
+        '200':
+          description: Dữ liệu clicks, impressions, CTR và position
+
+  /api/v1/projects/{project_id}/cms-bridge:
+    post:
+      summary: Cấu hình Omni Bridge cho CMS
+      description: Kiểm tra bridge và lưu cấu hình CMS theo project.
+      operationId: configureCmsBridge
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cms_api_url, api_key]
+              properties:
+                tenant_id: {type: string, format: uuid}
+                cms_type: {type: string, default: wordpress}
+                cms_api_url: {type: string, format: uri}
+                api_key: {type: string, writeOnly: true}
+      responses:
+        '200':
+          description: Bridge đã kết nối và trả trạng thái health
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: ENGINE_API_KEY

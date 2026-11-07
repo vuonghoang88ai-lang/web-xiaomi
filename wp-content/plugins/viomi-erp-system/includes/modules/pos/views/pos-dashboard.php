@@ -1,3 +1,8 @@
+<?php
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+?>
 <div class="wrap">
     <h1><?php esc_html_e( 'Bán hàng nhanh (POS)', 'mi-erp-system' ); ?></h1>
     <p class="description">Tạo đơn hàng trực tiếp mà không cần qua nhiều bước trung gian. Đơn hàng sẽ được tự động đồng bộ vào hệ thống WooCommerce và xuất Serial.</p>

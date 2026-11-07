@@ -1,0 +1,242 @@
+[
+  {
+    "day": 1,
+    "keyword": "tivi xiaomi 55 inch a pro 4k 2025",
+    "category": "Tivi Xiaomi",
+    "intent": "Nhóm B - Giao dịch / Mua bán",
+    "priority": "P1",
+    "competitor_url": "https://cuahangtcs.com/products/tivi-xiaomi-a-pro-55-inch"
+  },
+  {
+    "day": 2,
+    "keyword": "robot hut bui dreame l20 ultra chinh hang",
+    "category": "Robot Hút Bụi",
+    "intent": "Nhóm C - Định danh model",
+    "priority": "P1",
+    "competitor_url": "https://cellphones.com.vn/robot-hut-bui-lau-nha-dreame-l20-ultra.html"
+  },
+  {
+    "day": 3,
+    "keyword": "may loc khong khi xiaomi 4 pro cho phong 60m2",
+    "category": "Máy Lọc Không Khí",
+    "intent": "Nhóm B - Giao dịch",
+    "priority": "P1",
+    "competitor_url": "https://dienmayxanh.com/may-loc-khong-khi-xiaomi-smart-air-purifier-4-pro"
+  },
+  {
+    "day": 4,
+    "keyword": "tivi xiaomi 65 inch qled a pro 4k 120hz",
+    "category": "Tivi Xiaomi",
+    "intent": "Nhóm C - Định danh model",
+    "priority": "P1",
+    "competitor_url": ""
+  },
+  {
+    "day": 5,
+    "keyword": "so sanh tivi xiaomi a pro va xiaomi ea series",
+    "category": "Tivi Xiaomi",
+    "intent": "Nhóm A - So sánh / Đánh giá",
+    "priority": "P2",
+    "competitor_url": ""
+  },
+  {
+    "day": 6,
+    "keyword": "robot hut bui xiaomi x10 tu do rac",
+    "category": "Robot Hút Bụi",
+    "intent": "Nhóm B - Giao dịch",
+    "priority": "P1",
+    "competitor_url": ""
+  },
+  {
+    "day": 7,
+    "keyword": "cach cai dat tieng viet va ung dung cho tivi xiaomi",
+    "category": "Tivi Xiaomi",
+    "intent": "Nhóm D - Hướng dẫn kỹ thuật",
+    "priority": "P3",
+    "competitor_url": ""
+  },
+  {
+    "day": 8,
+    "keyword": "tivi xiaomi 43 inch gia re phong ngu 2025",
+    "category": "Tivi Xiaomi",
+    "intent": "Nhóm B - Giao dịch",
+    "priority": "P1",
+    "competitor_url": ""
+  },
+  {
+    "day": 9,
+    "keyword": "may loc khong khi xiaomi elite diet khuan uv",
+    "category": "Máy Lọc Không Khí",
+    "intent": "Nhóm C - Model",
+    "priority": "P1",
+    "competitor_url": ""
+  },
+  {
+    "day": 10,
+    "keyword": "robot hut bui dreame x30 pro chong roi toc",
+    "category": "Robot Hút Bụi",
+    "intent": "Nhóm C - Model",
+    "priority": "P1",
+    "competitor_url": ""
+  },
+  {
+    "day": 11,
+    "keyword": "tivi xiaomi 75 inch phong khach lon gia kho",
+    "category": "Tivi Xiaomi",
+    "intent": "Nhóm B - Giao dịch",
+    "priority": "P1",
+    "competitor_url": ""
+  },
+  {
+    "day": 12,
+    "keyword": "so sanh robot hut bui xiaomi va ecovacs deebot",
+    "category": "Robot Hút Bụi",
+    "intent": "Nhóm A - So sánh",
+    "priority": "P2",
+    "competitor_url": ""
+  },
+  {
+    "day": 13,
+    "keyword": "may loc khong khi xiaomi 4 compact cho phong nho",
+    "category": "Máy Lọc Không Khí",
+    "intent": "Nhóm B - Giao dịch",
+    "priority": "P1",
+    "competitor_url": ""
+  },
+  {
+    "day": 14,
+    "keyword": "tivi xiaomi 32 inch gia re sinh vien tro",
+    "category": "Tivi Xiaomi",
+    "intent": "Nhóm B - Giao dịch",
+    "priority": "P1",
+    "competitor_url": ""
+  },
+  {
+    "day": 15,
+    "keyword": "top 3 robot hut bui lau nha tot nhat cho chung cu 2025",
+    "category": "Robot Hút Bụi",
+    "intent": "Nhóm A - Tổng hợp / Review",
+    "priority": "P2",
+    "competitor_url": ""
+  },
+  {
+    "day": 16,
+    "keyword": "huong dan thay loi loc khong khi xiaomi va reset den",
+    "category": "Máy Lọc Không Khí",
+    "intent": "Nhóm D - Kỹ thuật",
+    "priority": "P3",
+    "competitor_url": ""
+  },
+  {
+    "day": 17,
+    "keyword": "tivi xiaomi 85 inch max rap chieu phim tai gia",
+    "category": "Tivi Xiaomi",
+    "intent": "Nhóm B - Giao dịch",
+    "priority": "P1",
+    "competitor_url": ""
+  },
+  {
+    "day": 18,
+    "keyword": "noi chien khong dau xiaomi smart air fryer pro 4l",
+    "category": "Gia Dụng Thông Minh",
+    "intent": "Nhóm C - Model",
+    "priority": "P1",
+    "competitor_url": ""
+  },
+  {
+    "day": 19,
+    "keyword": "may hut am xiaomi 22l chong nom phong ngu ha noi",
+    "category": "Gia Dụng Thông Minh",
+    "intent": "Nhóm B - Giao dịch",
+    "priority": "P1",
+    "competitor_url": ""
+  },
+  {
+    "day": 20,
+    "keyword": "robot hut bui xiaomi x20 plus hut lau tu giat gie",
+    "category": "Robot Hút Bụi",
+    "intent": "Nhóm C - Model",
+    "priority": "P1",
+    "competitor_url": ""
+  },
+  {
+    "day": 21,
+    "keyword": "tivi xiaomi choi game 120hz cong hdmi 2.1",
+    "category": "Tivi Xiaomi",
+    "intent": "Nhóm B - Giao dịch",
+    "priority": "P1",
+    "competitor_url": ""
+  },
+  {
+    "day": 22,
+    "keyword": "quat thap xiaomi smart tower fan khong canh em ai",
+    "category": "Gia Dụng Thông Minh",
+    "intent": "Nhóm B - Giao dịch",
+    "priority": "P1",
+    "competitor_url": ""
+  },
+  {
+    "day": 23,
+    "keyword": "co nen mua tivi xiaomi khong danh gia uu nhuoc diem",
+    "category": "Tivi Xiaomi",
+    "intent": "Nhóm A - Đánh giá",
+    "priority": "P2",
+    "competitor_url": ""
+  },
+  {
+    "day": 24,
+    "keyword": "cach bao duong va ve sinh robot hut bui xiaomi tai nha",
+    "category": "Robot Hút Bụi",
+    "intent": "Nhóm D - Kỹ thuật",
+    "priority": "P3",
+    "competitor_url": ""
+  },
+  {
+    "day": 25,
+    "keyword": "tivi xiaomi 50 inch a pro 4k gia goc tai kho",
+    "category": "Tivi Xiaomi",
+    "intent": "Nhóm B - Giao dịch",
+    "priority": "P1",
+    "competitor_url": ""
+  },
+  {
+    "day": 26,
+    "keyword": "may loc khong khi xiaomi nao tot nhat cho gia dinh co tre nho",
+    "category": "Máy Lọc Không Khí",
+    "intent": "Nhóm A - Đánh giá",
+    "priority": "P2",
+    "competitor_url": ""
+  },
+  {
+    "day": 27,
+    "keyword": "robot hut bui dreame l10s pro ultra heat",
+    "category": "Robot Hút Bụi",
+    "intent": "Nhóm C - Model",
+    "priority": "P1",
+    "competitor_url": ""
+  },
+  {
+    "day": 28,
+    "keyword": "chinh sach bao hanh 2 nam tivi xiaomi tai tongkhomi",
+    "category": "Tivi Xiaomi",
+    "intent": "Nhóm B - Thương hiệu / Uy tín",
+    "priority": "P1",
+    "competitor_url": ""
+  },
+  {
+    "day": 29,
+    "keyword": "he sinh thai nha thong minh xiaomi gom nhung gi",
+    "category": "Gia Dụng Thông Minh",
+    "intent": "Nhóm D - Kiến thức",
+    "priority": "P3",
+    "competitor_url": ""
+  },
+  {
+    "day": 30,
+    "keyword": "tong kho phan phoi xiaomi chinh hang gia si ha noi",
+    "category": "Tổng Kho Xiaomi",
+    "intent": "Nhóm B - Giao dịch / Thương hiệu",
+    "priority": "P1",
+    "competitor_url": ""
+  }
+]

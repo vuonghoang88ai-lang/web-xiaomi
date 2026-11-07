@@ -116,6 +116,10 @@ class Mi_ERP_Manufacturing_Ajax {
             }
 
             // 2. Sinh mã Serial cho thành phẩm nhập kho
+            $wh_table = $wpdb->prefix . 'mi_warehouses';
+            $default_wh_id = $wpdb->get_var( "SELECT id FROM $wh_table WHERE status = 'active' ORDER BY id ASC LIMIT 1" );
+            $target_warehouse_id = $default_wh_id ? intval( $default_wh_id ) : 2;
+
             for ( $i = 1; $i <= $order->quantity; $i++ ) {
                 // Format: MNF[OrderID]-[ProductID]-[Index]-[Random]
                 $generated_serial = sprintf( 'MNF%d-%d-%d-%s', $order_id, $order->product_id, $i, strtoupper(substr(md5(uniqid()), 0, 4)) );
@@ -124,7 +128,7 @@ class Mi_ERP_Manufacturing_Ajax {
                     'product_id' => $order->product_id,
                     'serial_number' => $generated_serial,
                     'status' => 'in_stock',
-                    'warehouse_id' => 1 // Kho mặc định
+                    'warehouse_id' => $target_warehouse_id // Kho mặc định đang kích hoạt
                 ) );
                 
                 $wpdb->insert( $trans_table, array(

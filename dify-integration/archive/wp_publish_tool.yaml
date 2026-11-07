@@ -1,0 +1,268 @@
+openapi: 3.0.0
+info:
+  title: WordPress TongKhoMi Publisher Tool
+  description: >
+    Bộ công cụ HTTP cho phép Dify Agent xuất bản bài viết / sản phẩm lên WordPress TongKhoMi,
+    tra cứu bài viết hiện có, và lấy danh mục. Xác thực bằng WordPress Application Password.
+  version: 2.0.0
+servers:
+  - url: http://wordpress
+    description: WordPress Docker container (qua mạng nội bộ Docker)
+  - url: http://172.17.0.1:8080
+    description: WordPress qua Host Gateway port 8080
+  - url: https://michinhhang.com
+    description: WordPress Production
+
+paths:
+  /wp-json/wp/v2/posts:
+    post:
+      summary: Tạo bài viết SEO mới (Draft)
+      operationId: create_wp_post_draft
+      description: >
+        Tạo bài viết WordPress dạng nháp (draft) với nội dung HTML do AI viết.
+        Điền đầy đủ SEO meta Rank Math qua custom fields.
+      security:
+        - basicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - content
+                - status
+              properties:
+                title:
+                  type: string
+                  description: Tiêu đề bài viết (H1, chứa từ khóa SEO chính).
+                  example: "Tivi Xiaomi 55 inch A Pro 4K 120Hz – Đánh giá chi tiết 2025"
+                content:
+                  type: string
+                  description: Nội dung HTML đầy đủ của bài viết (đã chuẩn hóa theo SOP 12).
+                status:
+                  type: string
+                  enum: [draft]
+                  default: draft
+                  description: Trạng thái bài viết. Dùng 'draft' để kiểm tra trước khi xuất bản.
+                slug:
+                  type: string
+                  description: "URL slug SEO-friendly. Ví dụ: tivi-xiaomi-55-inch-a-pro-4k-2025"
+                categories:
+                  type: array
+                  items:
+                    type: integer
+                  description: Danh sách ID chuyên mục WordPress.
+                  example: [12, 34]
+                tags:
+                  type: array
+                  items:
+                    type: integer
+                  description: Danh sách ID tag WordPress.
+                excerpt:
+                  type: string
+                  description: Mô tả ngắn (meta description SEO, 150-160 ký tự).
+                meta:
+                  type: object
+                  description: Custom fields / Rank Math SEO meta.
+                  properties:
+                    rank_math_title:
+                      type: string
+                      description: "SEO Title cho Rank Math (60-65 ký tự)."
+                    rank_math_description:
+                      type: string
+                      description: "Meta Description cho Rank Math (150-160 ký tự)."
+                    rank_math_focus_keyword:
+                      type: string
+                      description: "Từ khóa SEO trọng tâm. Ví dụ: tivi xiaomi 55 inch"
+      responses:
+        '201':
+          description: Bài viết đã tạo thành công.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: ID bài viết WordPress vừa tạo.
+                  link:
+                    type: string
+                    description: URL công khai của bài viết.
+                  status:
+                    type: string
+
+    get:
+      summary: Tìm kiếm bài viết hiện có (Anti-Cannibalization)
+      operationId: search_existing_posts
+      description: Tìm bài viết theo từ khóa để kiểm tra trùng lặp trước khi tạo bài mới.
+      security:
+        - basicAuth: []
+      parameters:
+        - name: search
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Từ khóa tìm kiếm trong tiêu đề và nội dung bài viết.
+          example: "tivi xiaomi 55 inch"
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: Số lượng bài viết trả về.
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [publish, draft, any]
+            default: any
+      responses:
+        '200':
+          description: Danh sách bài viết tìm được.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    title:
+                      type: object
+                      properties:
+                        rendered:
+                          type: string
+                    link:
+                      type: string
+                    status:
+                      type: string
+
+  /wp-json/wp/v2/posts/{id}:
+    patch:
+      summary: Cập nhật bài viết hiện có
+      operationId: update_wp_post
+      description: Cập nhật nội dung, trạng thái hoặc meta của bài viết đã có.
+      security:
+        - basicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID bài viết WordPress.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+                status:
+                  type: string
+                  enum: [draft]
+      responses:
+        '200':
+          description: Bài viết đã cập nhật thành công.
+
+  /wp-json/wp/v2/categories:
+    get:
+      summary: Lấy danh sách chuyên mục WordPress
+      operationId: get_wp_categories
+      description: Lấy toàn bộ chuyên mục để chọn ID khi tạo bài viết.
+      parameters:
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 100
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Tìm kiếm chuyên mục theo tên.
+      responses:
+        '200':
+          description: Danh sách chuyên mục.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    name:
+                      type: string
+                    slug:
+                      type: string
+                    count:
+                      type: integer
+
+  /wp-json/wp/v2/products:
+    post:
+      summary: Tạo sản phẩm WooCommerce mới
+      operationId: create_wc_product
+      description: Tạo sản phẩm WooCommerce dạng nháp với thông số kỹ thuật và giá.
+      security:
+        - basicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - content
+                - status
+              properties:
+                title:
+                  type: string
+                  description: Tên sản phẩm (chứa từ khóa SEO).
+                content:
+                  type: string
+                  description: Mô tả chi tiết sản phẩm (HTML).
+                short_description:
+                  type: string
+                  description: Mô tả ngắn sản phẩm.
+                status:
+                  type: string
+                  enum: [draft]
+                  default: draft
+                meta:
+                  type: object
+                  properties:
+                    _regular_price:
+                      type: string
+                      description: "Giá gốc (VND). Ví dụ: 12990000"
+                    _price:
+                      type: string
+                      description: "Giá bán hiện tại (VND)."
+                    _sku:
+                      type: string
+                      description: "Mã SKU sản phẩm."
+      responses:
+        '201':
+          description: Sản phẩm đã tạo thành công.
+
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+      description: >
+        WordPress Application Password.
+        Format: username:application_password
+        Encode sang Base64 và đặt vào header Authorization: Basic <base64>.
+        Tạo tại: WordPress Admin > Users > Profile > Application Passwords.
+        Tài khoản hiện tại: vuonghoangadmin

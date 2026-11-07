@@ -1,0 +1,202 @@
+openapi: 3.0.0
+info:
+  title: WordPress Omni Bridge Connector Tool
+  description: >
+    OpenAPI spec for Omni Bridge Connector plugin. Uses
+    /wp-json/omni-bridge/v1/* endpoints with API key header auth (X-Omni-Bridge-Key).
+    Không dùng Application Password hay Basic Auth nữa.
+  version: 3.0.0
+servers:
+  - url: http://172.20.0.1:8080
+    description: WordPress qua Dify Docker Gateway port 8080 (Khuyên dùng khi chạy Docker)
+  - url: http://172.17.0.1:8080
+    description: WordPress qua Host Gateway port 8080
+  - url: https://michinhhang.com
+    description: WordPress Production FQDN
+security:
+  - ApiKeyAuth: []
+paths:
+  /wp-json/omni-bridge/v1/search:
+    get:
+      summary: Tìm kiếm bài viết/product hiện có
+      description: Tìm kiếm bài viết đã tồn tại để tránh trùng lặp nội dung.
+      operationId: search_existing_posts
+      parameters:
+        - name: s
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Từ khóa tìm kiếm
+        - name: post_type
+          in: query
+          required: false
+          schema:
+            type: string
+            default: post
+          description: 'post (default) hoặc product'
+      responses:
+        '200':
+          description: Danh sách bài viết tìm thấy
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    title:
+                      type: string
+                    permalink:
+                      type: string
+                    status:
+                      type: string
+                    type:
+                      type: string
+
+  /wp-json/omni-bridge/v1/categories:
+    get:
+      summary: Lấy danh sách categories
+      operationId: get_wp_categories
+      parameters:
+        - name: post_type
+          in: query
+          required: false
+          schema:
+            type: string
+            default: post
+          description: "post (default) hoặc product để lấy product categories"
+      responses:
+        '200':
+          description: Danh sách categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    name:
+                      type: string
+                    slug:
+                      type: string
+                    count:
+                      type: integer
+  /wp-json/omni-bridge/v1/publish:
+    post:
+      summary: Tạo bài viết nháp (Draft) hoặc cập nhật
+      description: >
+        Tạo bài viết hoặc sản phẩm dưới dạng nháp (Draft) trên WordPress qua Omni Bridge.
+        post_status luôn là 'draft' — không bao giờ đăng trực tiếp.
+      operationId: create_wp_post_draft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [post_title]
+              properties:
+                post_title:
+                  type: string
+                  description: Tiêu đề bài viết (bắt buộc)
+                post_type:
+                  type: string
+                  enum: [post, product]
+                  default: post
+                  description: Loại nội dung
+                post_content:
+                  type: string
+                  description: Nội dung bài viết (Hollowood HTML)
+                post_excerpt:
+                  type: string
+                  description: Tóm tắt bài viết
+                post_slug:
+                  type: string
+                  description: Slug permalink
+                post_id:
+                  type: integer
+                  description: ID bài viết để cập nhật (nếu để trống sẽ tạo mới)
+                categories:
+                  type: array
+                  items:
+                    oneOf:
+                      - type: integer
+                      - type: string
+                  description: Danh sách category ID hoặc tên
+                tags:
+                  type: array
+                  items:
+                    type: string
+                  description: Danh sách tags
+                featured_image_url:
+                  type: string
+                  format: uri
+                  description: URL ảnh đại diện (tự động sideload về Media Library)
+                seo_meta:
+                  type: object
+                  properties:
+                    focus_keyword:
+                      type: string
+                    seo_title:
+                      type: string
+                    meta_description:
+                      type: string
+                    seo_description:
+                      type: string
+                    canonical_url:
+                      type: string
+                  description: Rank Math SEO meta (nếu plugin Rank Math đã cài)
+                product_data:
+                  type: object
+                  properties:
+                    sku:
+                      type: string
+                    regular_price:
+                      type: string
+                    sale_price:
+                      type: string
+                    stock_quantity:
+                      type: integer
+                    gallery_image_urls:
+                      type: array
+                      items:
+                        type: string
+                      description: URLs ảnh gallery (tự động sideload)
+                  description: Dữ liệu sản phẩm WooCommerce (bắt buộc khi post_type=product)
+      responses:
+        '200':
+          description: Kết quả xuất bản
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  post_id:
+                    type: integer
+                  permalink:
+                    type: string
+                  post_status:
+                    type: string
+                  post_type:
+                    type: string
+                  seo:
+                    type: string
+                  featured_image_id:
+                    type: integer
+                    nullable: true
+                  featured_image_url:
+                    type: string
+                    nullable: true
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Omni-Bridge-Key

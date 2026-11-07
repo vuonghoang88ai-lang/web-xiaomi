@@ -1,0 +1,231 @@
+/* ==========================================================================
+   PORTAL CHAT CANVAS - SOP 36: DUAL-PANE ARTIFACT CANVAS & LIVE SANDBOX
+   Phong cách Claude Artifacts & Gemini Canvas cho bài viết WooCommerce/Blog
+   ========================================================================== */
+
+.chat-app-wrapper.dual-pane-active {
+  display: flex !important;
+  gap: 16px !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chat-app-wrapper.dual-pane-active .chat-container {
+  flex: 1 1 45% !important;
+  max-width: 50% !important;
+  min-width: 380px !important;
+}
+
+/* Khung Canvas bên phải */
+.artifact-canvas-panel {
+  flex: 1 1 55%;
+  min-width: 440px;
+  max-width: 65%;
+  background: #111827;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  animation: slideInCanvas 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 50;
+}
+
+@keyframes slideInCanvas {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.artifact-canvas-panel.fullscreen {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  max-width: none !important;
+  z-index: 9999;
+  border-color: var(--primary);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
+}
+
+/* Canvas Header */
+.canvas-header {
+  padding: 12px 18px;
+  background: #1f2937;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.canvas-title-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.canvas-badge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  white-space: nowrap;
+}
+
+.canvas-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f3f4f6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.canvas-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.canvas-tab-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #9ca3af;
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.canvas-tab-btn.active {
+  background: var(--primary, #6366f1);
+  border-color: var(--primary, #6366f1);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.canvas-action-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e5e7eb;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.15s;
+}
+
+.canvas-action-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.canvas-action-btn.btn-publish {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: none;
+  color: white;
+  font-weight: 600;
+}
+
+/* Canvas Body */
+.canvas-body {
+  flex: 1;
+  padding: 20px 24px;
+  overflow-y: auto;
+  color: #e5e7eb;
+  font-size: 14px;
+  font-weight: 350;
+  line-height: 1.7;
+  letter-spacing: -0.005em;
+  -webkit-font-smoothing: antialiased;
+}
+
+.canvas-preview-pane {
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+.canvas-preview-pane h1 { font-size: 20px; font-weight: 600; color: #fff; margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; }
+.canvas-preview-pane h2 { font-size: 16.5px; font-weight: 550; color: #a5b4fc; margin-top: 20px; margin-bottom: 10px; }
+.canvas-preview-pane h3 { font-size: 14px; font-weight: 500; color: #cbd5e1; margin-top: 16px; margin-bottom: 8px; }
+.canvas-preview-pane p { margin-bottom: 12px; font-weight: 350; line-height: 1.7; }
+.canvas-preview-pane strong, .canvas-preview-pane b { font-weight: 550; color: #fff; }
+.canvas-preview-pane ul, .canvas-preview-pane ol { padding-left: 20px; margin-bottom: 14px; font-weight: 350; }
+.canvas-preview-pane li { margin-bottom: 4px; font-weight: 350; }
+.canvas-preview-pane table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; font-weight: 350; }
+.canvas-preview-pane th, .canvas-preview-pane td { border: 1px solid rgba(255,255,255,0.12); padding: 8px 12px; text-align: left; }
+.canvas-preview-pane th { background: rgba(99, 102, 241, 0.15); color: #fff; font-weight: 550; }
+
+.canvas-editor-textarea {
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+  background: #0b0f19;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 16px;
+  resize: none;
+  outline: none;
+}
+
+.canvas-editor-textarea:focus {
+  border-color: var(--primary, #6366f1);
+}
+
+/* Canvas Footer */
+.canvas-footer {
+  padding: 8px 18px;
+  background: #1a2234;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.canvas-metrics {
+  display: flex;
+  gap: 14px;
+}
+
+.canvas-metric-item strong {
+  color: #e2e8f0;
+}
+
+.btn-open-canvas-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  color: #a5b4fc;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.2s;
+}
+
+.btn-open-canvas-pill:hover {
+  background: rgba(99, 102, 241, 0.28);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+

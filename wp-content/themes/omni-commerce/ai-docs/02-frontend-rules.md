@@ -102,9 +102,9 @@ document.querySelector('.cart-contents-count').innerHTML =
 
 ## 11. Mobile-First Product Focus (UX Trang chủ & Danh mục)
 - **Triết lý tinh gọn:** Trên mobile, bắt buộc lược bỏ toàn bộ khối thông tin phụ (Features, Ads, News, Video, Value Props) để rút ngắn hành trình chạm đến sản phẩm.
-- **Responsive Hiding:** Sử dụng triệt để `hidden md:block` hoặc `hidden lg:flex` cho các section/block gây nhiễu và làm dài trang.
+- **Responsive Hiding:** Sử dụng triệt để Media Query `@media (max-width: 899px)` cho các khối banner phụ gây nhiễu và làm dài trang.
 - **Grid Ordering:** Tận dụng `order-2 lg:order-1` để hạ cấp độ ưu tiên của cột phụ trên mobile, đẩy Slider/Sản phẩm lên trên cùng.
-- **Tối ưu Banner Dọc:** Các banner dọc trong `product-row` phải được giảm chiều cao trên mobile (`min-h-[160px] lg:min-h-[340px]`) và ẩn ảnh minh họa lớn (`hidden md:block` trên `<img>`) để tránh việc banner chiếm trọn màn hình viewport của điện thoại.
+- **Loại bỏ Banner Dọc trên Mobile:** Các cột banner dọc trong `product-row` (`.mi-product-row-banner`) phải được **ẩn hoàn toàn trên mobile** (`@media (max-width: 899px) { display: none !important; }`) để lưới sản phẩm 2 cột bung rộng full-width 100% màn hình, mang lại trải nghiệm app TMĐT chuẩn (Shopee/Lazada). Trên Desktop (`>= 900px`), banner hiển thị 100% trọn vẹn với bố cục 1/5 và 4/5.
 
 ## 12. Mở rộng Layout & Căn lề Toàn Trang
 - **Header:** Background trải dài vô tận (`w-full`), nhưng khối nội dung (Topbar, Logo, Search) **PHẢI** được bọc trong `max-w-[1440px] mx-auto` để đồng bộ hoàn toàn với thân trang và Footer trên màn hình lớn.
@@ -140,3 +140,56 @@ document.querySelector('.cart-contents-count').innerHTML =
 - **Layout 2 cột:** Sử dụng `flex-col lg:flex-row`.
 - **Nút Số lượng (Quantity):** Tích hợp Javascript nội tuyến để submit form tự động khi bấm `+` hoặc `-`: 
   `document.querySelector('[name=update_cart]').disabled=false; document.querySelector('[name=update_cart]').click();`
+
+## 19. Phân định Trách nhiệm: ACF Data Layer vs Theme Responsive Layout Layer
+- **ACF chỉ là Data/Storage Layer:** Plugin ACF (Advanced Custom Fields) chỉ lưu trữ và trả về chuỗi/mảng giá trị (options, post meta) thông qua các hàm như `get_field()`, `the_field()`. ACF **tuyệt đối không** kiểm soát breakpoint màn hình, **không** can thiệp vào CSS hay quyết định phần tử hiển thị ra sao trên Mobile/Desktop.
+- **Theme CSS/HTML là Layout & Responsive Layer:** Việc một phần tử ẩn/hiện, căn giữa hay sang ngang, chuyển từ dạng cột (flex-col) sang hàng (flex-row) hoàn toàn do HTML markup và CSS Media Queries của Theme phụ trách. Khi gặp lỗi "sửa mobile mà desktop bị ảnh hưởng" hoặc "desktop bị dính giao diện mobile", nguyên nhân là do thiếu class responsive Tailwind tương ứng trong file `style.css` tĩnh, cần dùng Media Query chuẩn (`@media (min-width: 900px)`) để định tuyến chuẩn xác.
+
+## 20. Kỹ thuật Phân bổ Tỉ lệ Đều (Equal Height Proportions) Cột phụ Hero
+- Khi một cột phụ (Aside) nằm cạnh một thành phần có chiều cao linh hoạt lớn (như Slider 16:9 / 4:3), tuyệt đối không để các card có chiều cao cứng rồi dùng `mt-auto` đẩy chân trang xuống đáy (gây ra khoảng trắng chết ở giữa).
+- **Kỹ thuật chuẩn:**
+  1. Container bọc các thẻ: `flex-1 flex flex-col justify-between gap-2 xl:gap-2.5 min-h-0`.
+  2. Mỗi thẻ bên trong: `flex-1 min-h-0 flex items-center`.
+  3. Icon: Luôn bổ sung `shrink-0` để ngăn trình duyệt bóp méo icon trên màn hình hẹp (900px - 1100px).
+  4. Typography: Bổ sung `line-clamp-1` và font size thích ứng (`text-[12px] xl:text-[13px]`) kèm `min-w-0 flex-1`.
+  5. Cụm chân cột: Gán `shrink-0` để giữ kích thước ổn định, chuyển các số hotline thành link `<a>` bấm gọi trực tiếp (`tel:...`).
+
+## 21. Quy chuẩn Phân cấp Thị giác Giá Sản phẩm (Product Price Visual Hierarchy & CRO)
+- **Sai lầm phổ biến:** Bọc khối giá trong `text-secondary font-black` và xuất `$product->get_price_html()`. Vì thẻ `<del>` (giá gốc) đứng trước thẻ `<ins>` (giá sale) và cả hai cùng thừa hưởng màu đỏ đậm, giá cũ bị gạch ngang nhưng vẫn to chói, lấn át giá bán thực tế. Khi co hẹp trên mobile, giá cũ rớt dòng lại nằm ở trên đầu giá mới.
+- **Quy tắc phân cấp thị giác bắt buộc:**
+  1. **Giá sau khuyến mãi (Sale Price):** Nằm đầu tiên, to nhất (`text-base xl:text-lg`), cực đậm (`font-black`), mang màu đỏ thương hiệu (`text-secondary` hoặc `text-red-600`).
+  2. **Giá trước khuyến mãi (Regular Price):** Nằm sau giá bán, chìm xuống màu xám trung tính (`text-slate-400`), cỡ chữ nhỏ hơn (`text-xs xl:text-sm font-normal`), gạch ngang mờ (`line-through`). Tuyệt đối không để màu đỏ cạnh tranh thị giác với giá bán.
+  3. **Tag & Badge giảm giá:** Tính toán phần trăm tiết kiệm cụ thể `-X%` đặt cạnh giá gốc và gắn badge góc trên ảnh sản phẩm (thay cho chữ "SALE" tĩnh chung chung).
+  4. **Fallback ảnh sản phẩm:** Luôn dùng `wc_placeholder_img_src('woocommerce_thumbnail')` của WooCommerce thay vì đường dẫn file tĩnh không tồn tại.
+
+## 22. Quy tắc Bảo toàn Banner Desktop khi Ẩn trên Mobile (Desktop-First Preservation)
+- **Sai lầm gây lỗi mất banner desktop:** Thêm class `hidden` hoặc `hidden lg:flex` trực tiếp vào thẻ HTML của banner khi stylesheet chưa được biên dịch linh hoạt (BUG-029 & BUG-064). Trình duyệt sẽ ưu tiên class `.hidden` (`display: none`) và nuốt chửng khối nội dung ngay trên Desktop.
+- **Quy chuẩn bắt buộc:**
+  1. Thẻ HTML của phần tử Desktop luôn giữ cấu trúc hiển thị mặc định: `class="mi-product-row-banner lg:w-1/5 flex flex-col items-center ..."`. Tuyệt đối không thêm class `hidden`.
+  2. Dùng CSS Media Query bọc riêng theo đúng Breakpoint của theme (`899px` tương ứng với breakpoint `@media (min-width: 900px)` của `omni-commerce`):
+     ```css
+     @media (max-width: 899px) {
+         .mi-product-row-banner {
+             display: none !important;
+         }
+     }
+     ```
+  3. Đặt CSS media query 1 lần duy nhất tại file template cha (`front-page.php`), không in lặp lại trong vòng lặp template part.
+
+## 23. Quy chuẩn Kiến trúc Trang Chính sách & Văn bản Pháp lý (Policy Pages Architecture & Single H1 Rule)
+- **Bố cục 2 cột chuyên nghiệp (Desktop Sticky Sidebar + Reader-Optimized Content):**
+  1. **Bộ tứ chính sách nòng cốt:** `chinh-sach-bao-mat`, `chinh-sach-bao-hanh`, `chinh-sach-doi-tra`, `chinh-sach-van-chuyen`.
+  2. **Cột trái (`lg:col-span-1`):** Sticky sidebar hiển thị menu điều hướng 4 chính sách có icon trực quan, trạng thái `is_active` (`bg-primary/10 text-primary font-bold shadow-xs`) kèm mũi tên chỉ thị, Box hotline hỗ trợ `0822.83.4444` và nút Tra cứu bảo hành.
+  3. **Cột phải (`lg:col-span-3`):** Khung đọc bài viết tối ưu chiều dài dòng (không để trải rộng 1440px gây mỏi mắt), tích hợp Breadcrumbs (`Trang chủ > Chính sách & Quy định > [Tên chính sách]`), badge chứng nhận, metadata ngày cập nhật lần cuối, tình trạng hiệu lực và thời gian đọc ước tính.
+  4. **Mobile (< 900px):** Tự động xếp chồng dọc mượt mà, các bảng biểu so sánh tự động cuộn ngang (`overflow-x: auto`) không gây vỡ khung hình.
+- **Quy tắc Single H1 tuyệt đối (Tránh lỗi BUG-065):**
+  - File `page.php` đã tự động render tiêu đề trang trong thẻ `<h1><?php the_title(); ?></h1>`.
+  - Trong nội dung bài viết soạn thảo bằng Gutenberg hoặc HTML, **tuyệt đối không** chèn thêm thẻ `<h1>`. Tiêu đề các mục lớn bắt buộc bắt đầu từ `<h2>`, các mục con là `<h3>`. Đảm bảo mỗi trang chỉ có **duy nhất 1 thẻ H1** chuẩn Onpage SEO.
+- **Đồng bộ hóa 3 địa chỉ thực tế của hệ thống:**
+  - Cơ sở 1: Số 65 Hồ Ba Mẫu, Phường Phương Liên, Quận Đống Đa, Hà Nội
+  - Cơ sở 2: Khu Sân bóng Hồ Văn Quán, Đường 19/5, KĐT Văn Quán, Quận Hà Đông, Hà Nội
+  - Cơ sở 3: Kho 86, Cảng Hà Nội, Số 838 Bạch Đằng, Phường Thanh Lương, Quận Hai Bà Trưng, Hà Nội
+
+
+
+

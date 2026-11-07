@@ -19,6 +19,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Singleton pattern used.
  * Prevent application from having multiple instances of configuration.
  * At the same time allow distributed use of configurations.
+ *
+ * @phpstan-consistent-constructor
+ * @class   LocalFeedConfigs
+ * @version 1.6.0
  */
 class LocalFeedConfigs {
 
@@ -66,6 +70,7 @@ class LocalFeedConfigs {
 	 *
 	 * @since 1.0.10
 	 * @param array $locations Array of location to generate the feed files for.
+	 * @return void
 	 */
 	private function initialize_local_feeds_config( $locations ) {
 		$feed_ids = Pinterest_For_Woocommerce()::get_data( 'local_feed_ids' );
@@ -111,6 +116,8 @@ class LocalFeedConfigs {
 
 	/**
 	 * Cleanup local feed configs.
+	 *
+	 * @return void
 	 */
 	public static function deregister() {
 		Pinterest_For_Woocommerce()::save_data( 'local_feed_ids', false );

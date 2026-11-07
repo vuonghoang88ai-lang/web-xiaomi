@@ -58,10 +58,6 @@ class TA_WC_Variation_Swatches_Admin {
 			'render_the_setting_url_in_core_plugin'
 		), 10, 2 );
 
-        // Display Black Friday Banner in Admin Notices
-		add_action('admin_notices', array( $this, 'show_black_friday_banner') );
-		add_action('wp_ajax_dismiss_black_friday_banner', array( $this, 'dismiss_black_friday_banner') );
-
 		include_once( dirname( __FILE__ ) . '/class-menu-page.php' );
 		new VSWC_Settings_Page();
 	}
@@ -294,13 +290,8 @@ class TA_WC_Variation_Swatches_Admin {
 			'tawcvs',
 			array(
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-				'adminUrl' => admin_url()
 			)
 		);
-
-		if ( strpos( $screen->id, 'variation-swatches-addons' ) !== false ) {
-			wp_enqueue_style( 'tawcvs-admin-addons', plugins_url( '/assets/css/admin-addons-page.css', $dir_name ), array() );
-		}
 
 		// Don't enqueue unless we are in the edit product attribute or plugin setting page
 		if ( strpos( $screen->id, 'edit-pa_' ) === false &&
@@ -663,45 +654,6 @@ class TA_WC_Variation_Swatches_Admin {
 		$option = get_option( $this->option_name, array() );
 
 		return is_array( $option ) ? $option : array();
-	}
-
-	/**
-	 * Display Black Friday Banner in Admin Notices
-	 */
-	public function show_black_friday_banner() {
-		$expiry_date = strtotime( '2024-12-06' );
-		$today       = strtotime( current_time( 'Y-m-d' ) );
-
-		// Check if the banner is dismissed for the current user
-		if ( $today <= $expiry_date && ! get_user_meta( get_current_user_id(), 'dismissed_black_friday_banner', true ) ) {
-			$icon_url = WCVS_PLUGIN_URL . 'assets/images/ap40.png';
-			?>
-            <div class="notice notice-warning is-dismissible black-friday-banner"
-                 style="display: flex; align-items: center; padding: 10px; border-left-color: #f6c23e;">
-                <img src="<?php echo esc_url( $icon_url ); ?>" alt="Sale Icon"
-                     style="margin-right: 10px; width: 20px; height: 20px;">
-                <p style="margin: 0; padding: 0; flex: 1;">
-                    <strong>Black Friday Sale is Live!</strong> - Limited time Offer: Get 35% off all plugins! <a
-                            href="https://aovup.com/plugins/?ref=amessage-oto" target="_blank"
-                            style="text-decoration: underline; color: #856404;">Learn more</a>.
-                </p>
-            </div>
-            <script>
-                (function ($) {
-                    $(document).on("click", ".black-friday-banner .notice-dismiss", function () {
-                        $.post(ajaxurl, {action: "dismiss_black_friday_banner"});
-                    });
-                })(jQuery);
-            </script>
-		<?php }
-	}
-
-	/**
-	 * Handle Banner Dismissal via AJAX
-	 */
-	public function dismiss_black_friday_banner() {
-		update_user_meta( get_current_user_id(), 'dismissed_black_friday_banner', true );
-		wp_send_json_success();
 	}
 
 }

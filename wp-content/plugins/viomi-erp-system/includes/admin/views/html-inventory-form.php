@@ -1,4 +1,7 @@
 <?php
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
 global $wpdb;
 $products = $wpdb->get_results("
     SELECT p.ID, p.post_title, pm.meta_value as price

@@ -30,19 +30,33 @@ class Mi_ERP_CRM_Ajax {
             wp_send_json_error( 'Vui lòng nhập số điện thoại' );
         }
 
-        // Theo quy chuẩn BUG-03: Tìm kiếm SĐT cần dùng LIKE %s
-        $orders = $wpdb->get_results( $wpdb->prepare( "
-            SELECT post_id FROM {$wpdb->postmeta} 
-            WHERE meta_key = '_billing_phone' AND meta_value LIKE %s
-        ", '%' . $wpdb->esc_like( $phone ) . '%' ) );
+        // Theo quy chuẩn HPOS & BUG-03: Tìm kiếm SĐT trên cả wc_order_addresses và wp_postmeta
+        $like_phone = '%' . $wpdb->esc_like( $phone ) . '%';
+        $hpos_table = $wpdb->prefix . 'wc_order_addresses';
+        $order_ids  = array();
 
-        if ( empty( $orders ) ) {
-            wp_send_json_error( 'Không tìm thấy dữ liệu khách hàng với số điện thoại này.' );
+        if ( $wpdb->get_var( "SHOW TABLES LIKE '$hpos_table'" ) === $hpos_table ) {
+            $hpos_ids = $wpdb->get_col( $wpdb->prepare( "
+                SELECT DISTINCT order_id FROM {$hpos_table} 
+                WHERE address_type = 'billing' AND phone LIKE %s
+            ", $like_phone ) );
+            if ( ! empty( $hpos_ids ) ) {
+                $order_ids = array_merge( $order_ids, $hpos_ids );
+            }
         }
 
-        $order_ids = array();
-        foreach ( $orders as $o ) {
-            $order_ids[] = (int) $o->post_id;
+        $postmeta_ids = $wpdb->get_col( $wpdb->prepare( "
+            SELECT DISTINCT post_id FROM {$wpdb->postmeta} 
+            WHERE meta_key = '_billing_phone' AND meta_value LIKE %s
+        ", $like_phone ) );
+        if ( ! empty( $postmeta_ids ) ) {
+            $order_ids = array_merge( $order_ids, $postmeta_ids );
+        }
+
+        $order_ids = array_unique( array_filter( array_map( 'intval', $order_ids ) ) );
+
+        if ( empty( $order_ids ) ) {
+            wp_send_json_error( 'Không tìm thấy dữ liệu khách hàng với số điện thoại này.' );
         }
 
         $latest_order_id = max($order_ids);
@@ -163,14 +177,32 @@ class Mi_ERP_CRM_Ajax {
         if ( !empty($serial_result) ) {
             $serials = $serial_result;
         } else {
-            // 2. Tìm theo số điện thoại (SĐT trong _billing_phone) - BUG-03
-            $orders = $wpdb->get_results( $wpdb->prepare( "
-                SELECT post_id FROM {$wpdb->postmeta} 
-                WHERE meta_key = '_billing_phone' AND meta_value LIKE %s
-            ", '%' . $wpdb->esc_like( $keyword ) . '%' ) );
+            // 2. Tìm theo số điện thoại (SĐT trong HPOS wc_order_addresses và wp_postmeta)
+            $like_phone = '%' . $wpdb->esc_like( $keyword ) . '%';
+            $hpos_table = $wpdb->prefix . 'wc_order_addresses';
+            $order_ids  = array();
 
-            if ( !empty($orders) ) {
-                $order_ids = wp_list_pluck( $orders, 'post_id' );
+            if ( $wpdb->get_var( "SHOW TABLES LIKE '$hpos_table'" ) === $hpos_table ) {
+                $hpos_ids = $wpdb->get_col( $wpdb->prepare( "
+                    SELECT DISTINCT order_id FROM {$hpos_table} 
+                    WHERE address_type = 'billing' AND phone LIKE %s
+                ", $like_phone ) );
+                if ( ! empty( $hpos_ids ) ) {
+                    $order_ids = array_merge( $order_ids, $hpos_ids );
+                }
+            }
+
+            $postmeta_ids = $wpdb->get_col( $wpdb->prepare( "
+                SELECT DISTINCT post_id FROM {$wpdb->postmeta} 
+                WHERE meta_key = '_billing_phone' AND meta_value LIKE %s
+            ", $like_phone ) );
+            if ( ! empty( $postmeta_ids ) ) {
+                $order_ids = array_merge( $order_ids, $postmeta_ids );
+            }
+
+            $order_ids = array_unique( array_filter( array_map( 'intval', $order_ids ) ) );
+
+            if ( ! empty( $order_ids ) ) {
                 $placeholders = implode( ',', array_fill( 0, count( $order_ids ), '%d' ) );
                 $serials = $wpdb->get_results( $wpdb->prepare( "
                     SELECT * FROM $serial_table WHERE order_id IN ($placeholders) ORDER BY sold_date DESC

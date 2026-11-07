@@ -1,0 +1,79 @@
+app:
+  name: "W5 QA Publisher v2.0 - Unified Orchestration"
+  description: "Tích hợp OrchestrationManager, OutputAdapter, StateManager"
+  mode: agent-chat
+
+model_config:
+  llm:
+    provider: "9Router"
+    model: "combo-creater"
+    timeout: 90
+
+orchestration:
+  mode: "auto"
+  fallback_chain: ["crewai", "dify", "router_direct"]
+  max_retries: 2
+
+workflow:
+  nodes:
+    - id: start
+      type: start
+    
+    - id: init_managers
+      type: custom_tool
+      tool: "orchestration_manager_init"
+      desc: "Initialize OrchestrationManager & StateManager"
+    
+    - id: execute
+      type: custom_tool
+      tool: "orchestration_retry_handler"
+      desc: "Execute with fallback chain"
+      inputs:
+        keyword: "{{ input.keyword }}"
+        category: "{{ input.category }}"
+    
+    - id: standardize
+      type: custom_tool
+      tool: "output_adapter"
+      desc: "Standardize to UnifiedOutput"
+    
+    - id: validate
+      type: custom_tool
+      tool: "output_adapter_validate"
+      desc: "Validate output"
+    
+    - id: save_state
+      type: custom_tool
+      tool: "state_manager_save"
+      desc: "Save execution state"
+    
+    - id: publish_wp
+      type: http_request
+      method: POST
+      url: "{{ env.WP_API_BASE }}/posts"
+      headers:
+        X-Omni-Bridge-Key: "{{ env.WP_API_KEY }}"
+      body: "{{ standardize.unified_output }}"
+    
+    - id: end
+      type: end
+
+  flow:
+    - start → init_managers
+    - init_managers → execute
+    - execute → standardize
+    - standardize → validate
+    - validate → save_state
+    - save_state → publish_wp
+    - publish_wp → end
+
+inputs:
+  - keyword: string
+  - category: string
+  - competitor_url: string (optional)
+
+outputs:
+  - article: string
+  - qa_report: string
+  - post_id: integer
+  - mode: string

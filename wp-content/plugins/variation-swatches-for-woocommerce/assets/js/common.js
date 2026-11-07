@@ -7,8 +7,4 @@ jQuery(document).ready(function ($) {
         let href = $(this).attr("href");
         window.open(href, "_blank");
     })
-
-    $( '.aovup-core-install-notice' ).on( 'click', '.notice-dismiss', function( event, el ) {
-        $.get(window.tawcvs.adminUrl+"?aovup-swatch-notice-dismiss=1");
-    });
 });

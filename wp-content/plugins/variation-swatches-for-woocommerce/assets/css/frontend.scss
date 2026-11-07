@@ -388,3 +388,8 @@ table.variations {
   width: auto !important;
   height: auto !important;
 }
+
+// Grey out the label of an unavailable radio option along with its radio
+.swatch-radio .swatch.disabled + .swatch-label {
+  opacity: 0.4;
+}

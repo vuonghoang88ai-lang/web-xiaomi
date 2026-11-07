@@ -16,6 +16,9 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Class handling methods to return Pinterest Feed Status.
+ *
+ * @class   FeedStatusService
+ * @version 1.6.0
  */
 class FeedStatusService {
 
@@ -36,7 +39,7 @@ class FeedStatusService {
 	/**
 	 * The error contexts to search for in the workflow responses.
 	 *
-	 * @var array
+	 * @var string[]
 	 */
 	const ERROR_CONTEXTS = array(
 		'validation_stats_warnings',
@@ -49,7 +52,7 @@ class FeedStatusService {
 	 * The error codes that are related to the feed itself, and not a specific product.
 	 * Source: https://help.pinterest.com/en/business/article/data-source-ingestion
 	 *
-	 * @var array
+	 * @var string[]
 	 */
 	private const GLOBAL_ERROR_CODES = array(
 		// Validation errors.
@@ -222,7 +225,7 @@ class FeedStatusService {
 			return static::FEED_STATUS_NOT_REGISTERED;
 		}
 
-		return strtolower( $feed['status'] ) ?? static::FEED_STATUS_NOT_REGISTERED;
+		return strtolower( $feed['status'] ?? static::FEED_STATUS_NOT_REGISTERED );
 	}
 
 	/**

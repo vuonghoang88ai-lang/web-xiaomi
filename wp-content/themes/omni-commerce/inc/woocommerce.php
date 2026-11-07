@@ -27,17 +27,50 @@ remove_action( 'woocommerce_before_shop_loop', 'woocommerce_result_count', 20 );
 add_filter( 'the_content', 'mi_clean_content_styles_and_images', 20 );
 function mi_clean_content_styles_and_images( $content ) {
     if ( is_product() ) {
-        // 1. Loại bỏ các thuộc tính style nội tuyến
+        // 1. Loại bỏ các thuộc tính style nội tuyến (Tailwind first — AGENTS.md §3)
         $content = preg_replace('/(<[^>]+) style=".*?"/i', '$1', $content);
-        
-        // 2. Ép style responsive cho mọi thẻ img
-        $content = preg_replace('/<img /i', '<img style="max-width:100%;height:auto;border-radius:12px;" ', $content);
-        
+
+        // 2. Ép class responsive cho mọi thẻ img (Tailwind classes, no inline CSS)
+        $content = preg_replace('/<img(?![^>]*\bclass=)\s/i', '<img class="max-w-full h-auto rounded-xl" ', $content);
+
         // 3. Chuyển h1 thành h2 để tối ưu SEO
         $content = preg_replace('/<h1(.*?)>/i', '<h2$1 class="text-2xl font-bold my-4">', $content);
         $content = str_replace('</h1>', '</h2>', $content);
     }
     return $content;
+}
+
+/**
+ * Fix: Remove non-existent image sizes from srcset.
+ * In Docker, thumbnail files may be missing from disk. This filter
+ * removes sizes whose files don't exist, preventing 404 errors.
+ */
+add_filter( 'wp_calculate_image_srcset', 'mi_filter_broken_image_srcset', 20, 5 );
+function mi_filter_broken_image_srcset( $sources, $size_array, $image_src, $image_meta, $attachment_id ) {
+    if ( empty( $sources ) || ! $image_meta ) {
+        return $sources;
+    }
+
+    $upload_dir = wp_upload_dir();
+    $base_url   = $upload_dir['baseurl'];
+    $base_path  = $upload_dir['basedir'];
+
+    foreach ( $sources as $key => $source ) {
+        // Convert URL to file path by replacing baseurl with basedir
+        $file_path = str_replace( $base_url, $base_path, $source['url'] );
+        // Strip query string (e.g. ?ver=1.0) if present
+        $file_path = strtok( $file_path, '?' );
+        if ( ! file_exists( $file_path ) ) {
+            unset( $sources[ $key ] );
+        }
+    }
+
+    // If all sizes were filtered out, return false so WordPress falls back to $image_src
+    if ( empty( $sources ) ) {
+        return false;
+    }
+
+    return $sources;
 }
 
 /**
@@ -411,6 +444,8 @@ function mi_hide_checkout_junk_css() {
 add_action( 'wp_ajax_nopriv_mi_submit_installment', 'mi_submit_installment_handler' );
 add_action( 'wp_ajax_mi_submit_installment', 'mi_submit_installment_handler' );
 function mi_submit_installment_handler() {
+    check_ajax_referer( 'mi_installment_action', 'nonce' );
+
     $product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
     $name = isset($_POST['name']) ? sanitize_text_field($_POST['name']) : '';
     $phone = isset($_POST['phone']) ? sanitize_text_field($_POST['phone']) : '';
@@ -464,10 +499,14 @@ add_filter('request', function( $vars ) {
     global $wpdb;
     if( ! empty( $vars['pagename'] ) || ! empty( $vars['category_name'] ) || ! empty( $vars['name'] ) || ! empty( $vars['attachment'] ) ) {
         $slug = ! empty( $vars['pagename'] ) ? $vars['pagename'] : ( ! empty( $vars['name'] ) ? $vars['name'] : ( !empty( $vars['category_name'] ) ? $vars['category_name'] : $vars['attachment'] ) );
-        $exists = $wpdb->get_var( $wpdb->prepare( "SELECT t.term_id FROM $wpdb->terms t LEFT JOIN $wpdb->term_taxonomy tt ON tt.term_id = t.term_id WHERE tt.taxonomy = 'product_cat' AND t.slug = %s" ,array( $slug )));
-        if( $exists ){
+        $term_tax = $wpdb->get_row( $wpdb->prepare( "SELECT tt.taxonomy, t.slug FROM $wpdb->terms t LEFT JOIN $wpdb->term_taxonomy tt ON tt.term_id = t.term_id WHERE tt.taxonomy IN ('product_cat', 'category') AND t.slug = %s LIMIT 1" , array( $slug ) ) );
+        if( $term_tax ){
             $old_vars = $vars;
-            $vars = array('product_cat' => $slug );
+            if ( $term_tax->taxonomy === 'product_cat' ) {
+                $vars = array('product_cat' => $slug );
+            } else {
+                $vars = array('category_name' => $slug );
+            }
             if ( !empty( $old_vars['paged'] ) || !empty( $old_vars['page'] ) )
                 $vars['paged'] = ! empty( $old_vars['paged'] ) ? $old_vars['paged'] : $old_vars['page'];
             if ( !empty( $old_vars['orderby'] ) )
@@ -489,4 +528,58 @@ add_filter('term_link', function( $url, $term, $taxonomy ) {
     return $url;
 }, 10, 3);
 
+/**
+ * =========================================================================
+ * TỰ ĐỘNG TẠO DỮ LIỆU MẪU (LƯỢT BÁN & ĐÁNH GIÁ SAO) KHI ĐĂNG SẢN PHẨM MỚI
+ * =========================================================================
+ * Giúp sản phẩm mới có sẵn chứng thực xã hội (Social Proof) uy tín giống Shopee/Lazada.
+ */
+add_action( 'transition_post_status', 'mi_auto_generate_product_sample_data', 10, 3 );
+function mi_auto_generate_product_sample_data( $new_status, $old_status, $post ) {
+    // Chỉ kích hoạt khi bài viết là sản phẩm và chuyển sang trạng thái publish
+    if ( ! is_object( $post ) || 'product' !== $post->post_type || 'publish' !== $new_status ) {
+        return;
+    }
+
+    $product_id = $post->ID;
+
+    // Kiểm tra xem sản phẩm đã có dữ liệu total_sales chưa (tránh ghi đè khi chỉnh sửa lại sản phẩm cũ)
+    $existing_sales = get_post_meta( $product_id, 'total_sales', true );
+    if ( $existing_sales !== '' && (int) $existing_sales > 0 ) {
+        return;
+    }
+
+    // 1. Random số lượt bán tự nhiên (từ 68 đến 850, thi thoảng chạm mốc 1.2k - 1.6k)
+    $weights = wp_rand( 1, 100 );
+    if ( $weights > 85 ) {
+        // 15% xác suất sản phẩm siêu hot bán trên 1.000 chiếc
+        $random_sales = wp_rand( 1050, 1680 );
+    } else {
+        $random_sales = wp_rand( 68, 680 );
+    }
+
+    // 2. Random điểm sao đánh giá cao uy tín (từ 4.80 đến 5.00)
+    $ratings = array( '4.80', '4.90', '5.00', '5.00', '4.90' );
+    $random_rating = $ratings[ array_rand( $ratings ) ];
+
+    // 3. Random số lượt review tương ứng tỉ lệ khoảng 8% - 15% số lượt bán
+    $review_ratio = wp_rand( 8, 14 ) / 100;
+    $random_reviews = max( 12, (int) round( $random_sales * $review_ratio ) );
+
+    // 4. Phân bổ số sao chi tiết (để WooCommerce đồng bộ các widget/biểu đồ sao)
+    $five_stars = (int) round( $random_reviews * 0.9 );
+    $four_stars = max( 0, $random_reviews - $five_stars );
+    $rating_counts = array(
+        5 => $five_stars,
+        4 => $four_stars,
+    );
+
+    // Cập nhật vào DB
+    update_post_meta( $product_id, 'total_sales', $random_sales );
+    update_post_meta( $product_id, '_wc_average_rating', $random_rating );
+    update_post_meta( $product_id, '_wc_review_count', $random_reviews );
+    update_post_meta( $product_id, '_wc_rating_count', $rating_counts );
 }
+
+}
+

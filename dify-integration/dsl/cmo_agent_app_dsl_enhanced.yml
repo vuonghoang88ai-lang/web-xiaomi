@@ -1,0 +1,232 @@
+version: "1.0"
+name: "CMO Agent App - Enhanced with Orchestration"
+description: "CMO Agent workflow với OrchestrationManager integration, state tracking, error handling và fallback chains"
+metadata:
+  created_at: 2024-10-27
+  updated_at: 2024-10-27
+  orchestration_modes: ["crewai", "dify", "router_direct"]
+  state_tracking: true
+  error_handling: true
+  fallback_chains: true
+  workflow_type: "cmo_marketing_automation"
+
+# ==================== ORCHESTRATION CONFIGURATION ====================
+orchestration:
+  mode: "auto"
+  timeout_llm: 120
+  timeout_publish: 60
+  max_retries: 3
+  fallback_chain: ["crewai", "dify", "router_direct"]
+  
+  dify:
+    enabled: true
+    api_base: "${DIFY_API_BASE}"
+    workflow_key: "${DIFY_CMO_WORKFLOW_KEY}"
+    timeout: 180
+  
+  crewai:
+    enabled: true
+    agent_timeout: 150
+    parallel_tasks: 5
+    agents: ["strategy_planner", "content_coordinator", "campaign_manager", "analytics_lead", "budget_optimizer"]
+  
+  router_direct:
+    enabled: true
+    api_base: "${ROUTER_URL}"
+    api_key: "${ROUTER_API_KEY}"
+    model: "combo-creater"
+
+# ==================== STATE MANAGEMENT ====================
+state_management:
+  enabled: true
+  backend: "${STATE_BACKEND}"
+  db_url: "${STATE_DB_URL}"
+
+# ==================== ERROR HANDLING & FALLBACK ====================
+error_handling:
+  enabled: true
+  
+  error_nodes:
+    - id: "cmo_error_handler"
+      type: "error.handler"
+      description: "CMO workflow error handling"
+      error_types:
+        - "timeout"
+        - "validation_failed"
+        - "api_error"
+        - "budget_exceeded"
+
+# ==================== CONTENT GENERATION WORKFLOW ====================
+workflow:
+  name: "cmo_agent_app_enhanced"
+  
+  nodes:
+    # ===== Input Node =====
+    - id: "cmo_input"
+      type: "input"
+      description: "Accept CMO campaign parameters"
+      outputs:
+        campaign_type: string
+        target_audience: string
+        budget: number
+        timeline: string
+        channels: array
+    
+    # ===== State Initialization =====
+    - id: "init_cmo_execution_state"
+      type: "node.state.initialize"
+      depends_on: ["cmo_input"]
+      description: "Initialize CMO execution state"
+      config:
+        project_id: "cmo_main"
+        campaign_type: "{{ cmo_input.campaign_type }}"
+        budget: "{{ cmo_input.budget }}"
+        status: "pending"
+      outputs:
+        execution_id: string
+        state_checkpoint: object
+    
+    # ===== Strategy Planning =====
+    - id: "execute_cmo_orchestration"
+      type: "node.orchestration.execute"
+      depends_on: ["init_cmo_execution_state"]
+      description: "Execute CMO strategy with fallback"
+      config:
+        modes: ["{{ orchestration.mode }}"]
+        campaign_type: "{{ cmo_input.campaign_type }}"
+        target_audience: "{{ cmo_input.target_audience }}"
+        budget: "{{ cmo_input.budget }}"
+        timeline: "{{ cmo_input.timeline }}"
+        channels: "{{ cmo_input.channels }}"
+        timeout: "{{ orchestration.timeout_llm }}"
+      error_handler: "cmo_error_handler"
+      outputs:
+        strategy: string
+        content_plan: string
+        budget_allocation: object
+        orchestration_mode: string
+        execution_attempts: integer
+    
+    # ===== Output Standardization =====
+    - id: "standardize_cmo_output"
+      type: "node.adapter.unified_output"
+      depends_on: ["execute_cmo_orchestration"]
+      description: "Convert CMO output to unified format"
+      config:
+        mode: "{{ execute_cmo_orchestration.orchestration_mode }}"
+        include_metadata: true
+      outputs:
+        unified_output: object
+        metadata: object
+    
+    # ===== Output Validation =====
+    - id: "validate_cmo_output"
+      type: "node.validation.unified"
+      depends_on: ["standardize_cmo_output"]
+      description: "Validate CMO output"
+      config:
+        min_strategy_length: 200
+        require_metadata: true
+      outputs:
+        is_valid: boolean
+        validation_errors: array
+    
+    # ===== State Update =====
+    - id: "update_cmo_state"
+      type: "node.state.update"
+      depends_on: ["validate_cmo_output"]
+      description: "Update CMO state"
+      config:
+        execution_id: "{{ init_cmo_execution_state.execution_id }}"
+        status: "{{ validate_cmo_output.is_valid ? 'validated' : 'failed' }}"
+        orchestration_mode: "{{ execute_cmo_orchestration.orchestration_mode }}"
+      outputs:
+        state_updated: boolean
+    
+    # ===== Save Campaign Record =====
+    - id: "save_cmo_campaign_record"
+      type: "node.campaign.save"
+      depends_on: ["update_cmo_state"]
+      description: "Save CMO campaign record"
+      config:
+        campaign_type: "{{ cmo_input.campaign_type }}"
+        strategy: "{{ standardize_cmo_output.unified_output.strategy }}"
+        budget_allocation: "{{ execute_cmo_orchestration.budget_allocation }}"
+        orchestration_mode: "{{ execute_cmo_orchestration.orchestration_mode }}"
+      outputs:
+        campaign_file: string
+        record_saved: boolean
+        campaign_id: string
+    
+    # ===== Final State Save =====
+    - id: "finalize_cmo_state"
+      type: "node.state.save"
+      depends_on: ["save_cmo_campaign_record"]
+      description: "Finalize and save CMO state"
+      config:
+        execution_id: "{{ init_cmo_execution_state.execution_id }}"
+        project_id: "cmo_main"
+        campaign_id: "{{ save_cmo_campaign_record.campaign_id }}"
+        status: "completed"
+        orchestration_mode: "{{ execute_cmo_orchestration.orchestration_mode }}"
+      outputs:
+        state_saved: boolean
+        completion_time: string
+    
+    # ===== Output Node =====
+    - id: "cmo_output"
+      type: "output"
+      depends_on: ["finalize_cmo_state"]
+      description: "Return CMO campaign results"
+      outputs:
+        success: "{{ finalize_cmo_state.state_saved }}"
+        campaign_id: "{{ save_cmo_campaign_record.campaign_id }}"
+        strategy: "{{ standardize_cmo_output.unified_output.strategy }}"
+        budget_allocation: "{{ execute_cmo_orchestration.budget_allocation }}"
+        orchestration_mode: "{{ execute_cmo_orchestration.orchestration_mode }}"
+        campaign_file: "{{ save_cmo_campaign_record.campaign_file }}"
+
+# ==================== NODE TYPE DEFINITIONS ====================
+node_types:
+  state.initialize:
+    description: "Initialize execution state"
+  
+  state.update:
+    description: "Update execution state"
+  
+  state.save:
+    description: "Save state to backend"
+  
+  orchestration.execute:
+    description: "Execute with automatic mode selection"
+  
+  adapter.unified_output:
+    description: "Convert output to unified format"
+  
+  validation.unified:
+    description: "Validate unified output"
+  
+  campaign.save:
+    description: "Save campaign record"
+
+# ==================== INTEGRATIONS ====================
+integrations:
+  orchestration_manager:
+    module: "orchestration_manager"
+  
+  state_manager:
+    module: "state_manager"
+  
+  output_adapter:
+    module: "output_adapter"
+
+# ==================== MONITORING ====================
+monitoring:
+  enabled: true
+  log_level: "INFO"
+
+# ==================== RETRY POLICY ====================
+retry_policy:
+  max_retries_per_mode: 2
+  initial_delay_seconds: 5
+

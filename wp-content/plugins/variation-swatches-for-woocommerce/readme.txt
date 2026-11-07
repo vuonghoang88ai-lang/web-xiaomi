@@ -2,14 +2,14 @@
 Contributors: variationswatches, themealien, zgani, mehbubrashid, minhnguyen25 
 Tags: variation swatches, woocommerce color swatches, variation swatches for woocommerce
 Requires at least: 4.5
-Tested up to: 6.9
-Stable tag: 2.2.7
-WC requires at least: 3.2.0
-WC tested up to: 9.4.2
+Tested up to: 7.1
+Stable tag: 2.2.9
+WC requires at least: 3.0.0
+WC tested up to: 11.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Creates variation swatches for WooCommerce, converts your variation dropdown into color, label, or photo swatches with ease, The original Variation Swatches for WooCommerce.
+Turn WooCommerce variation dropdowns into color, image, label and radio button swatches. The original Variation Swatches for WooCommerce.
 
 == Description ==
 
@@ -20,26 +20,41 @@ With a friendly and easy-to-use interface, you can add default color, image or l
 
 https://www.youtube.com/watch?v=1qGusf9IfFY&t
 
-**Woosuite Variation Swatches for WooCommerce Features :**
+**Free features:**
 
-* <a href="https://aovup.com/plugins/woocommerce-variation-swatches/#button" rel="friend">Auto Convert All Variation Dropdowns To Button Swatch</a> - With a click of a button you can convert your dropdowns into button/label.
-*  <a href="https://aovup.com/plugins/woocommerce-variation-swatches/#autoimage" rel="friend">Auto Convert Into Image Swatches*</a> - By toggling this option you can set dual color for those products that can not be described with one color.
-*   <a href="https://aovup.com/plugins/woocommerce-variation-swatches/#dualcolor" rel="friend">Dual Color Variation Swatches*</a> - Automatically covert dropdowns to "Image Swatch" if variation has an image.
+* Color, image and label (button) swatches for your product attributes
+* Radio button swatches
+* Show the color name inside color swatches
+* <a href="https://aovup.com/plugins/woocommerce-variation-swatches/#button" rel="friend">Auto convert all variation dropdowns to button swatches</a> - With a click of a button you can convert your dropdowns into button/label swatches.
 * <a href="https://aovup.com/plugins/woocommerce-variation-swatches/#archive" rel="friend">Show swatches on archive / shop</a> - Let users find what they really want by showing your swatches on the shop archive.
-* <a href="https://aovup.com/plugins/woocommerce-variation-swatches/#shapes" rel="friend">Attribute Variation Swatches Shapes</a> - We have included three presets for you to choose from as well as advanced styling options to further customize your swatches.
-* <a href="https://aovup.com/plugins/woocommerce-variation-swatches/#outofstock" rel="friend">Out of Stock Variation Swatches Control</a> - With our recent update, we have included the option for you to manage how to handle your out-of-stock variation.
-* Completely integrate with WooCommerce plugin
-* Work on variable product only
-* Create attribute color swatches
-* Create attribute image swatches
-* Create attribute label/text swatches
-* Manage attribute globally
-* Create new attribute swatch in product editing page
+* <a href="https://aovup.com/plugins/woocommerce-variation-swatches/#shapes" rel="friend">Swatch shapes</a> - Circle, square or rounded swatches.
+* Unavailable combinations grey out as shoppers make their choices
+* Tooltips with the option name on the product page
+* Font size, margin and padding settings for the product page and the shop
+* Turn swatches off for a single product
+* Create attribute swatches right from the product editing page
+* Works on variable products and with WooCommerce's own attribute screens
+
+**Pro features:**
+
+These come with <a href="https://aovup.com/plugins/woocommerce-variation-swatches/" rel="friend">Variation Swatches Pro</a>, a separate paid add-on. The free plugin works fully without it.
+
+* <a href="https://aovup.com/plugins/woocommerce-variation-swatches/#autoimage" rel="friend">Auto convert dropdowns to image swatches</a> - Automatically convert dropdowns to image swatches if the variation has an image.
+* <a href="https://aovup.com/plugins/woocommerce-variation-swatches/#dualcolor" rel="friend">Dual color swatches</a> - Set two colors for products that can't be described with one color.
+* <a href="https://aovup.com/plugins/woocommerce-variation-swatches/#outofstock" rel="friend">Out of stock control</a> - Blur, cross out or hide out-of-stock options.
+* Image swatch ratio and position, swatch width and height
+* Styling for normal, hover and selected swatches and for tooltips
+* Image tooltips and custom tooltip text
+* Show the attribute name and description with the swatches
+* Limit how many swatches show on product and shop pages
+* Variation image preview: change the product image when a shopper clicks or hovers over a swatch
+* Shop page: show swatches for one attribute only, choose where the swatches appear, and show tooltips
+* Extra fees for attribute options
 
 
 = What's Next =
 
-If you like this Variation swatches plugin, then consider checking out our <a href="https://wpclient.com/">other projects</a>:
+If you like this Variation swatches plugin, then consider checking out our <a href="https://aovup.com/plugins/" rel="friend">other WooCommerce plugins</a>:
 
 * <a href="https://aovup.com/plugins/woocommerce-additional-variation-images/" rel="friend" title="Additional variation images for WooCommerce">Additional variation images for WooCommerce</a> - Show additional variation images and videos to showcase your product key highlights.
 *    <a href="https://aovup.com/plugins/woocommerce-show-variations-on-shop-page/">Show Variations on Shop Page</a> - Show your variation products on your shop page separately to increase your catalog size and the user experience.
@@ -103,6 +118,26 @@ Yes, it will work with any theme, but may require some styling to make it match 
 7. Add new attribute color when edit a product
 
 == Changelog ==
+= 2.2.9 =
+* Feature - Radio button swatches and labels inside color swatches are now part of the free plugin.
+* Note - If you set attributes to radio buttons or turned on labels inside color swatches while you had Pro, your store may show them again after this update, even if Pro is no longer active.
+* Note - Attributes set to radio buttons now always show as radio buttons. Without Pro they used to show as a dropdown, or as labels when "Auto Convert Dropdowns To Label" was on for them; that setting no longer changes them.
+* Dev - Radio button inputs now have unique ids (tawcvs-radio-{product id}-{term id}-{number}) instead of the option's slug, so theme CSS or JavaScript that targets the old ids needs updating.
+* Tweak - Removed the "Upgrade your Checkout for Free" notice that showed on every admin screen.
+* Tweak - The plugin no longer contacts our servers: the Addons page and the "Works well with" box, which loaded a plugin list from dw.aovup.com, are removed.
+* Tweak - The setup video on the settings page now opens on YouTube when clicked instead of loading inside the page.
+* Tweak - The "update settings" notice now shows only on the Plugins screen and on the plugin's settings page.
+* Tweak - Removed the welcome popup shown after updates, the expired Black Friday notice and an old discount offer in the Pro popup.
+* Tweak - The description lists free and Pro features separately.
+* Fix - With Pro, an image tooltip whose image was deleted now shows the text tooltip instead of a broken image.
+* Fix - On the shop page, clicking a radio button's label selects the option for that product, not for another product with the same option.
+* Fix - An unavailable radio option greys out its label as well as its button.
+* Tweak - Tested up to WooCommerce 11.2.
+
+= 2.2.8 =
+* Fix - No more "Translation loading for the wcvs domain was triggered too early" notice in the debug log on WordPress 6.7 and later.
+* Tweak - Tested up to WordPress 7.1.
+
 = 2.2.7 =
 * Fix - Variation swatches no longer appear greyed out on page load when in-stock combinations are still available.
 * Tweak - Unavailable options now grey out automatically as you make selections, regardless of the "Hide out of stock items" setting.

@@ -1,3 +1,8 @@
+<?php
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+?>
 <div class="wrap">
     <h1><?php esc_html_e( 'Kích hoạt bảo hành thủ công', 'mi-erp-system' ); ?></h1>
     <p class="description"><?php esc_html_e( 'Dành cho các đơn hàng bán ngoài (qua điện thoại, tại cửa hàng) mà không tạo đơn trên WooCommerce.', 'mi-erp-system' ); ?></p>

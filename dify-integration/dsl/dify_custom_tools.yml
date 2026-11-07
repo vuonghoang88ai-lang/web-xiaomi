@@ -1,0 +1,164 @@
+# Dify Custom Tools Integration - Orchestration Manager, OutputAdapter, StateManager
+# Được sử dụng bởi w5_qa_publisher_dsl_v2.yml
+
+tools:
+  - name: "orchestration_manager_init"
+    description: "Initialize OrchestrationManager & StateManager"
+    type: "builtin"
+    params:
+      - name: "mode"
+        type: "string"
+        default: "auto"
+        description: "Orchestration mode (auto/crewai/dify/router_direct)"
+      
+      - name: "fallback_chain"
+        type: "array"
+        default: ["crewai", "dify", "router_direct"]
+        description: "Fallback modes in priority order"
+    
+    returns:
+      - name: "orchestration_mgr"
+        type: "object"
+        description: "OrchestrationManager instance"
+      
+      - name: "state_mgr"
+        type: "object"
+        description: "StateManager instance"
+
+  - name: "orchestration_retry_handler"
+    description: "Execute orchestration with retry & fallback chain"
+    type: "builtin"
+    params:
+      - name: "keyword"
+        type: "string"
+        required: true
+      
+      - name: "category"
+        type: "string"
+        required: true
+      
+      - name: "competitor_url"
+        type: "string"
+        required: false
+      
+      - name: "max_retries"
+        type: "integer"
+        default: 2
+    
+    returns:
+      - name: "result"
+        type: "object"
+        description: "Execution result"
+      
+      - name: "mode_used"
+        type: "string"
+        description: "Orchestration mode actually used"
+      
+      - name: "total_attempts"
+        type: "integer"
+        description: "Total attempts before success"
+
+  - name: "output_adapter"
+    description: "Convert orchestration output to UnifiedOutput"
+    type: "builtin"
+    params:
+      - name: "result"
+        type: "object"
+        required: true
+        description: "Raw result from orchestration"
+      
+      - name: "mode"
+        type: "string"
+        required: true
+        description: "Orchestration mode (crewai/dify/router_direct)"
+      
+      - name: "metadata"
+        type: "object"
+        required: true
+        description: "Additional metadata"
+    
+    returns:
+      - name: "unified_output"
+        type: "object"
+        description: "UnifiedOutput instance"
+
+  - name: "output_adapter_validate"
+    description: "Validate UnifiedOutput completeness"
+    type: "builtin"
+    params:
+      - name: "output"
+        type: "object"
+        required: true
+        description: "UnifiedOutput to validate"
+    
+    returns:
+      - name: "is_valid"
+        type: "boolean"
+        description: "Validation result"
+      
+      - name: "errors"
+        type: "array"
+        description: "Validation errors if any"
+
+  - name: "state_manager_save"
+    description: "Save execution state"
+    type: "builtin"
+    params:
+      - name: "keyword"
+        type: "string"
+        required: true
+      
+      - name: "category"
+        type: "string"
+        required: true
+      
+      - name: "mode"
+        type: "string"
+        required: true
+        description: "Orchestration mode"
+      
+      - name: "status"
+        type: "string"
+        default: "completed"
+        description: "Execution status"
+      
+      - name: "execution_time"
+        type: "number"
+        description: "Execution time in seconds"
+    
+    returns:
+      - name: "state_saved"
+        type: "boolean"
+        description: "Whether state was saved successfully"
+
+  - name: "state_manager_stats"
+    description: "Get campaign statistics"
+    type: "builtin"
+    params:
+      - name: "project_id"
+        type: "string"
+        default: "autopilot_main"
+    
+    returns:
+      - name: "stats"
+        type: "object"
+        description: "Campaign statistics"
+
+# Integration with Dify built-in tools
+integrations:
+  - name: "WordPress Publisher"
+    type: "http_api"
+    endpoint: "{{ env.WP_API_BASE }}/posts"
+    method: "POST"
+    auth:
+      type: "header"
+      key: "X-Omni-Bridge-Key"
+      value: "{{ env.WP_API_KEY }}"
+
+# Configuration
+config:
+  llm_provider: "9Router"
+  state_backend: "file"
+  timeout_llm: 90
+  timeout_publish: 40
+  max_retries: 3

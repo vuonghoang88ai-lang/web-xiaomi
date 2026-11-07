@@ -1,3 +1,8 @@
+<?php
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+?>
 <div class="wrap mi-erp-inventory-wrap">
     <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 mt-4 block relative">
         <h1 class="text-2xl font-bold text-slate-800 mb-6">Quản lý Kho (Inventory Management)</h1>

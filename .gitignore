@@ -1,0 +1,48 @@
+# Environment & Secrets
+.env
+.env.*
+*.key
+*.pem
+
+# Database & Backups
+*.sql
+*.sql.gz
+backups/
+*.tar.gz
+*.bak
+*.bak*
+*.tmp
+
+# Logs
+*.log
+debug.log
+wp-content/debug.log
+
+# CLI binaries & archives
+tailwindcss-linux-x64
+wp-cli.phar
+
+# Dependencies
+node_modules/
+vendor/
+
+# WordPress generated / user content
+wp-content/uploads/
+wp-content/upgrade/
+wp-content/upgrade-temp-backup/
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+dify/
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+

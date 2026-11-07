@@ -22,6 +22,9 @@ use Throwable;
 
 /**
  * Class handling fetch methods for feed profiles.
+ *
+ * @class   Feeds
+ * @version 1.6.0
  */
 class Feeds {
 
@@ -140,8 +143,11 @@ class Feeds {
 			'default_availability' => 'IN_STOCK',
 		);
 
-		$cache_key    = PINTEREST_FOR_WOOCOMMERCE_PREFIX . '_request_' . md5( wp_json_encode( $data ) . (string) $ad_account_id );
+		// Ignore every legacy error key: earlier zero-delay failures could leave multiple permanent entries.
+		$cache_key    = PINTEREST_FOR_WOOCOMMERCE_PREFIX . '_create_feed_error_v2_'
+			. md5( wp_json_encode( $data ) . (string) $ad_account_id );
 		$cached_error = get_transient( $cache_key );
+		$stored_delay = Pinterest_For_Woocommerce()::get_data( 'create_feed_delay' );
 
 		if ( false !== $cached_error ) {
 			// Faking Pinterest API response to 425 Too early.
@@ -167,8 +173,10 @@ class Feeds {
 		try {
 			$feed = APIV5::create_feed( $data, $ad_account_id );
 		} catch ( PinterestApiException $e ) {
-			$delay   = Pinterest_For_Woocommerce()::get_data( 'create_feed_delay' ) ?? MINUTE_IN_SECONDS;
-			$message = sprintf( '%1$s - %2$s', esc_html( $e->get_pinterest_code() ), esc_html( $e->getMessage() ) );
+			$delay   = is_numeric( $stored_delay ) && (int) $stored_delay > 0
+				? (int) $stored_delay
+				: MINUTE_IN_SECONDS;
+			$message = sprintf( '%1$s - %2$s', esc_html( (string) $e->get_pinterest_code() ), esc_html( $e->getMessage() ) );
 			set_transient( $cache_key, $message, $delay );
 			// Double the delay.
 			Pinterest_For_Woocommerce()::save_data(
@@ -179,6 +187,7 @@ class Feeds {
 		}
 
 		static::invalidate_feeds_cache();
+		FeedOwnership::record( (string) ( $feed['id'] ?? '' ), (string) $ad_account_id );
 
 		$feed_id = static::match_local_feed_configuration_to_registered_feeds( array( $feed ) );
 
@@ -282,6 +291,42 @@ class Feeds {
 	}
 
 	/**
+	 * Get every feed of the ad account, following the API pagination.
+	 *
+	 * Unlike get_feeds(), this reads all pages and lets API errors reach the caller.
+	 *
+	 * @since 1.6.0
+	 *
+	 * @return array The feed profile objects of every page.
+	 *
+	 * @throws PinterestApiException Pinterest API Exception, or when Pinterest repeats a page cursor
+	 *                               and the list cannot be completed.
+	 */
+	public static function get_all_feeds(): array {
+		$ad_account_id = (string) Pinterest_For_WooCommerce()::get_setting( 'tracking_advertiser' );
+		$feeds         = array();
+		$bookmark      = '';
+		$seen          = array();
+
+		do {
+			$seen[ $bookmark ] = true;
+			$page              = APIV5::get_feeds( $ad_account_id, $bookmark );
+			$feeds             = array_merge( $feeds, $page['items'] ?? array() );
+			$bookmark          = (string) ( $page['bookmark'] ?? '' );
+
+			// A cursor already served would loop forever; a partial list must not pass as complete.
+			if ( '' !== $bookmark && isset( $seen[ $bookmark ] ) ) {
+				throw new PinterestApiException(
+					esc_html__( 'Pinterest repeated a feed page cursor, so the feed list is incomplete.', 'pinterest-for-woocommerce' ),
+					0
+				);
+			}
+		} while ( '' !== $bookmark );
+
+		return $feeds;
+	}
+
+	/**
 	 * Invalidate the merchant feeds cache.
 	 *
 	 * @since 1.4.0
@@ -297,12 +342,17 @@ class Feeds {
 	 * Verify if the local feed is already registered to the merchant.
 	 * Return its ID if it is.
 	 *
-	 * @param array $feeds The list of feeds to check against. If not set, the list will be fetched from the API.
+	 * @since 1.6.0 Reads every feed page when no list is given, and lets API errors through
+	 *              instead of treating them as "no feeds", which would create a duplicate feed.
+	 *
+	 * @param array $feeds The list of feeds to check against. If not set, every page is fetched from the API.
 	 * @return string Returns the ID of the feed if properly registered or an empty string otherwise.
+	 *
+	 * @throws PinterestApiException When the feed list cannot be fetched completely.
 	 */
 	public static function match_local_feed_configuration_to_registered_feeds( array $feeds = array() ): string {
 		if ( empty( $feeds ) ) {
-			$feeds = static::get_feeds();
+			$feeds = static::get_all_feeds();
 		}
 
 		$configs = LocalFeedConfigs::get_instance()->get_configurations();
@@ -337,6 +387,11 @@ class Feeds {
 	 * @return bool
 	 */
 	private static function does_feed_match( array $feed ): bool {
+		// Pinterest keeps listing deleted feeds for a while; never register to one of those.
+		if ( self::FEED_STATUS_DELETED === ( $feed['status'] ?? '' ) ) {
+			return false;
+		}
+
 		$local_country = Pinterest_For_Woocommerce::get_base_country();
 		try {
 			$local_locale = LocaleMapper::get_locale_for_api();
@@ -365,9 +420,10 @@ class Feeds {
 	 * manually and must not be touched, even when it is hosted on the store's own domain.
 	 *
 	 * Known limitation: this is a naming heuristic. A file a merchant uploads under the same
-	 * prefix (for example `pinterest-for-woocommerce-manual.csv`) is treated as plugin generated.
-	 * The plugin does not keep a record of the Pinterest feed IDs it created, which would be the
-	 * reliable way to establish ownership for older or orphaned feeds.
+	 * prefix (for example `pinterest-for-woocommerce-manual.csv`) is treated as plugin generated,
+	 * and a plugin feed created under a previous domain or uploads URL is not. FeedOwnership keeps
+	 * the IDs of the feeds the plugin created or registered to and is the reliable record for
+	 * those cases; this check remains the fallback for feeds that predate it.
 	 *
 	 * @since 1.4.29
 	 *
@@ -427,9 +483,11 @@ class Feeds {
 	 *
 	 * @throws PinterestApiException Pinterest API Exception.
 	 * @since 1.2.13
-	 * @deprecated
+	 * @deprecated 1.5.4 Use get_feed() and check the returned feed's status.
 	 */
 	public static function is_local_feed_enabled( string $feed_id ): bool {
+		wc_deprecated_function( __METHOD__, '1.5.4' );
+
 		if ( empty( $feed_id ) ) {
 			return false;
 		}
@@ -451,6 +509,7 @@ class Feeds {
 		try {
 			$ad_account_id = Pinterest_For_WooCommerce()::get_setting( 'tracking_advertiser' );
 			APIV5::delete_feed( $feed_id, $ad_account_id );
+			FeedOwnership::forget( $feed_id, (string) $ad_account_id );
 			return true;
 		} catch ( PinterestApiException $e ) {
 			Logger::log( $e->getMessage(), 'error' );

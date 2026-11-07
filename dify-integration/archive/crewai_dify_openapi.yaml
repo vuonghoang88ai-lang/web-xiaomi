@@ -1,0 +1,214 @@
+openapi: 3.0.0
+info:
+  title: CrewAI Marketing Department Automation Tools
+  description: Bộ công cụ tích hợp Dify AI Copilot với Hệ thống Đặc vụ Tiếp thị Đa năng CrewAI tại Michinhhang.com. Cho phép Dify kích hoạt các tác vụ trinh sát đối thủ, viết bài chuẩn SEO, kiểm định chất lượng QA và xuất bản WordPress.
+  version: 1.0.0
+servers:
+  - url: http://100.122.224.122:8000
+    description: CrewAI Enterprise FastAPI Microservice Local Server
+paths:
+  /api/v1/chat-manager:
+    post:
+      summary: Chat Chiến Lược Với CMO Agent
+      operationId: chat_cmo_manager
+      description: Gửi câu hỏi hoặc mệnh lệnh chiến lược đến Giám Đốc Marketing AI (CMO Agent) có lưu ngữ cảnh hội thoại đa lượt trong SQLite.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+                - thread_id
+              properties:
+                message:
+                  type: string
+                  description: Nội dung câu hỏi hoặc mệnh lệnh tiếp thị từ người dùng.
+                  example: "Hãy phân tích cơ hội bán Tivi Xiaomi 65 inch trong tháng này"
+                thread_id:
+                  type: string
+                  description: ID phiên hội thoại để duy trì bộ nhớ ngữ cảnh.
+                  example: "dify_session_001"
+      responses:
+        '200':
+          description: Phản hồi chiến lược từ CMO Agent kèm trạng thái phân tích.
+
+  /api/v1/execute-crew:
+    post:
+      summary: Kích Hoạt Đội Ngũ CrewAI Sản Xuất Nội Dung
+      operationId: execute_crew_task
+      description: Kích hoạt toàn bộ quy trình sản xuất nội dung phân cấp của 6 Worker Agents (Cào đối thủ, lên outline, viết bài 2000 từ chuẩn SOP 12, kiểm định QA và tạo bản nháp WordPress).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - objective
+              properties:
+                objective:
+                  type: string
+                  description: Mục tiêu hoặc chủ đề bài viết cần sản xuất.
+                  example: "Đánh giá chi tiết Tivi Xiaomi 55 inch A Pro 4K 120Hz"
+                task_type:
+                  type: string
+                  enum: [seo_article, competitor_analysis, product_article, custom]
+                  default: seo_article
+                  description: Loại hình công việc cần Crew thực hiện.
+                competitor_url:
+                  type: string
+                  description: URL website đối thủ nếu cần cào dữ liệu tham chiếu (tùy chọn).
+                  example: "https://cuahangtcs.com/products/tivi-xiaomi-a-pro-55-inch"
+                publish_to_wordpress:
+                  type: boolean
+                  default: true
+                  description: Tự động lưu bài viết thành bản nháp trên WordPress sau khi qua thẩm định QA.
+      responses:
+        '200':
+          description: Khởi chạy Crew thành công, trả về job_id để theo dõi.
+
+  /api/v1/competitor/recon:
+    post:
+      summary: Trinh Sát Đối Thủ SERP
+      operationId: recon_competitor
+      description: Cào sâu trang web hoặc sitemap của đối thủ cạnh tranh, bóc tách cấu trúc giá, khuyến mãi và hình ảnh sản phẩm thực tế.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - competitor_url
+              properties:
+                competitor_url:
+                  type: string
+                  description: Đường dẫn website đối thủ cần quét.
+                  example: "https://cuahangtcs.com"
+      responses:
+        '200':
+          description: Kết quả hồ sơ trinh sát đối thủ.
+
+  /api/v1/marketing/strategist/cannibalization-check:
+    post:
+      summary: Kiểm Tra Trùng Lặp Từ Khóa (Anti-Cannibalization)
+      operationId: check_keyword_cannibalization
+      description: Truy vấn ChromaDB Vector Store để kiểm tra xem từ khóa hoặc ý tưởng bài viết mới có bị xung đột (keyword cannibalization) với kho bài viết đã có trên WordPress hay không.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - keyword
+              properties:
+                keyword:
+                  type: string
+                  description: Từ khóa hoặc tiêu đề bài viết dự kiến triển khai.
+                  example: "tivi xiaomi 65 inch giá rẻ"
+      responses:
+        '200':
+          description: Kết quả kiểm tra mức độ trùng lặp và gợi ý xử lý.
+
+  /api/v1/marketing/copywriter/evaluate:
+    post:
+      summary: Thẩm Định Chất Lượng Bài Viết Chuẩn SOP 12
+      operationId: evaluate_content_sop12
+      description: Chấm điểm bài viết tự động theo 4 tiêu chí nghiêm ngặt của SOP 12 (Độ dài từ ngữ, 4 liên kết chính sách, phát hiện từ sáo rỗng AI, nhận diện thương hiệu).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+                  description: Toàn bộ nội dung văn bản bài viết (Markdown hoặc HTML).
+      responses:
+        '200':
+          description: Điểm số chi tiết và nhận xét đạt/không đạt ngưỡng xuất bản.
+
+  /api/v1/job-status/{job_id}:
+    get:
+      summary: Tra Cứu Tiến Độ Nhiệm Vụ CrewAI
+      operationId: get_job_status
+      description: Lấy trạng thái hiện tại, nhật ký thực thi và liên kết bài viết WordPress của một nhiệm vụ Crew đang chạy hoặc đã hoàn thành.
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Mã định danh job_id hoặc job_uuid được trả về khi khởi chạy.
+      responses:
+        '200':
+          description: Chi tiết trạng thái nhiệm vụ.
+
+  /api/v1/marketing/social/repurpose:
+    post:
+      summary: Tái Tạo Nội Dung Đa Kênh (Social Repurposer)
+      operationId: repurpose_social_content
+      description: Chuyển đổi một bài viết dài trên blog thành kịch bản video ngắn TikTok/Reels cuốn hút và bài đăng tương tác Facebook/Threads.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+                  description: Nội dung bài viết gốc cần chuyển đổi.
+                platforms:
+                  type: array
+                  items:
+                    type: string
+                  description: Danh sách nền tảng đích (tiktok, facebook, threads).
+                  example: ["tiktok", "facebook"]
+      responses:
+        '200':
+          description: Kịch bản video và bài đăng mạng xã hội tương ứng.
+
+  /api/v1/rag/search:
+    post:
+      summary: Tra Cứu Tri Thức Sản Phẩm & Bài Viết RAG
+      operationId: search_rag_knowledge
+      description: Tìm kiếm ngữ nghĩa trong Vector Database ChromaDB về các sản phẩm, thông số kỹ thuật và bài viết hiện có.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - query
+              properties:
+                query:
+                  type: string
+                  description: Câu hỏi hoặc từ khóa cần tra cứu tri thức.
+                  example: "thông số tivi xiaomi 65 inch qled"
+                top_k:
+                  type: integer
+                  default: 3
+                  description: Số lượng kết quả phù hợp nhất cần lấy.
+      responses:
+        '200':
+          description: Danh sách đoạn trích dẫn tri thức liên quan nhất.
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Enterprise API Secret Key của CrewAI Microservice.
+security:
+  - ApiKeyAuth: []

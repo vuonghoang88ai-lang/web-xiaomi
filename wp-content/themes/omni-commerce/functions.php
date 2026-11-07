@@ -12,3 +12,4 @@ require_once get_template_directory() . '/inc/woocommerce.php';
 require_once get_template_directory() . '/inc/customizer.php';
 require_once get_template_directory() . '/inc/performance.php';
 require_once get_template_directory() . '/inc/plugins-require.php';
+require_once get_template_directory() . '/inc/seo.php';

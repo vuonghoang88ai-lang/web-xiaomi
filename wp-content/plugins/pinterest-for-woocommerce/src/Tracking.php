@@ -27,6 +27,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Class Tracker responsible for hooking into system events.
+ *
+ * @class   Tracking
+ * @version 1.6.0
  */
 class Tracking {
 
@@ -80,7 +83,7 @@ class Tracking {
 	 *
 	 * @since 1.4.0
 	 *
-	 * @param array $trackers A list of trackers to track events with.
+	 * @param Tracker[] $trackers A list of trackers to track events with.
 	 */
 	public function __construct( array $trackers = array() ) {
 		$this->trackers = $trackers;
@@ -95,7 +98,7 @@ class Tracking {
 		add_action( 'wp_footer', array( $this, 'handle_search' ) );
 
 		// Tracks add to cart events.
-		add_action( 'woocommerce_add_to_cart', array( $this, 'handle_add_to_cart' ), 10, 6 );
+		add_action( 'woocommerce_add_to_cart', array( $this, 'handle_add_to_cart' ), 10, 4 );
 
 		// Customer cart changes made outside add-to-cart release the AddToCart repeat guard.
 		add_action( 'woocommerce_cart_item_removed', array( $this, 'handle_cart_item_removed' ), 10, 2 );
@@ -103,7 +106,7 @@ class Tracking {
 		add_action( 'woocommerce_cart_emptied', array( $this, 'handle_cart_emptied' ) );
 
 		// Tracks checkout events.
-		add_action( 'woocommerce_before_thankyou', array( $this, 'handle_checkout' ), 10, 2 );
+		add_action( 'woocommerce_before_thankyou', array( $this, 'handle_checkout' ), 10, 1 );
 
 		array_walk(
 			$this->trackers,
@@ -460,16 +463,23 @@ class Tracking {
 
 			$product = $order_item->get_product();
 
-			$items[] = new Product(
-				uniqid( 'product' ),
-				$product->get_id(),
-				$order_item->get_name(),
-				wc_get_product_category_list( $product->get_id() ),
-				'brand',
-				$order->get_item_total( $order_item, false, true ),
-				get_woocommerce_currency(),
-				$order_item->get_quantity()
-			);
+			/*
+			 * A product deleted since the purchase no longer loads, and WooCommerce clears its ID
+			 * on the order line. The line has no product left to report, but it was paid for, so
+			 * it still counts towards the order's value and quantity below.
+			 */
+			if ( $product instanceof \WC_Product ) {
+				$items[] = new Product(
+					uniqid( 'product' ),
+					$product->get_id(),
+					$order_item->get_name(),
+					wc_get_product_category_list( $product->get_id() ),
+					'brand',
+					$order->get_item_total( $order_item, false, true ),
+					get_woocommerce_currency(),
+					$order_item->get_quantity()
+				);
+			}
 
 			$total_quantity += $order_item->get_quantity();
 			$checkout_value += (float) $order_item->get_total();

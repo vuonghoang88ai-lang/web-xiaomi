@@ -16,11 +16,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Class adding Save Pin support.
+ *
+ * @class   SaveToPinterest
+ * @version 1.6.0
  */
 class SaveToPinterest {
 
 	/**
 	 * Initiate class.
+	 *
+	 * @return void
 	 */
 	public static function maybe_init() {
 
@@ -41,6 +46,7 @@ class SaveToPinterest {
 	 * Show Product Pin HTML.
 	 *
 	 * @since 1.0.0
+	 * @return void
 	 */
 	public static function render_product_pin() {
 
@@ -59,8 +65,8 @@ class SaveToPinterest {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param int $post_id Post ID.
-	 * @param int $post_thumbnail_id Optional. Post Thumbnail ID.
+	 * @param int        $post_id           Post ID.
+	 * @param int|string $post_thumbnail_id Optional. Post Thumbnail ID.
 	 *
 	 * @return string
 	 */
@@ -78,15 +84,20 @@ class SaveToPinterest {
 				. '</span>';
 		}
 
+		/*
+		 * pinit.js reads these from the link's query string, which it splits on "?", "&" and "="
+		 * before decoding each value. Every value is therefore plain text, percent-encoded below:
+		 * an unencoded "&" in a product name or "?" in a plain permalink would cut the value short.
+		 */
 		$attributes = array(
-			'description' => esc_html( $product_name ),
-			'url'         => esc_url( get_the_permalink( $post_id ) ),
+			'description' => html_entity_decode( $product_name, ENT_QUOTES, 'UTF-8' ),
+			'url'         => (string) get_the_permalink( $post_id ),
 		);
 
 		$post_thumbnail_id = empty( $post_thumbnail_id ) ? get_post_thumbnail_id( $post_id ) : $post_thumbnail_id;
 		$attachment        = wp_get_attachment_image_src( $post_thumbnail_id, 'large' );
 		if ( ! empty( $attachment ) ) {
-			$attributes['media'] = esc_url( $attachment[0] );
+			$attributes['media'] = (string) $attachment[0];
 		}
 
 		/**
@@ -101,7 +112,7 @@ class SaveToPinterest {
 			$screen_reader_text,
 			esc_url(
 				add_query_arg(
-					$attributes,
+					array_map( 'rawurlencode', $attributes ),
 					'https://www.pinterest.com/pin/create/button/'
 				)
 			)
@@ -126,16 +137,16 @@ class SaveToPinterest {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string     $html The html to be filtered.
-	 * @param Object     $data Data passed to the filter.
-	 * @param WC_Product $product The product object.
+	 * @param string      $html The html to be filtered.
+	 * @param Object      $data Data passed to the filter.
+	 * @param \WC_Product $product The product object.
 	 *
-	 * @return bool
+	 * @return string
 	 */
 	public static function add_to_wc_blocks( $html, $data, $product ) {
 
 		if ( empty( $product ) ) {
-			return;
+			return $html;
 		}
 
 		return str_replace( '</li>', self::render_pin( $product->get_id() ) . '</li>', $html );
