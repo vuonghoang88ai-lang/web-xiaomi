@@ -30,6 +30,16 @@ function handleCustomChatCommand(message) {
     executeGeoOptimize(m.replace(/^\/geo[:\s]+/, '').trim());
     return true;
   }
+  // Lệnh lập lịch và phê duyệt bài viết / kế hoạch (SOP 65 & SOP 30)
+  const isScheduleSlash = m === '/schedule' || m.startsWith('/schedule ') || m === '/plan' || m.startsWith('/plan ') || m === '/duyet' || m.startsWith('/duyet ') || m === '/laplich';
+  const isScheduleIntent = ['lập lịch', 'lên lịch', 'hẹn giờ', 'duyệt bài', 'phê duyệt', 'đăng vào lúc', 'đăng sáng mai', 'đăng chiều nay'].some(k => lowerMsg.includes(k));
+  if (isScheduleSlash || isScheduleIntent) {
+    if (typeof handleChatScheduleCommand === 'function') {
+      handleChatScheduleCommand(m);
+      return true;
+    }
+  }
+
   // Lệnh xuất bản trực tiếp hoặc phân tích ý định đăng bài (SOP 30 Semantic Routing)
   const lowerMsg = m.toLowerCase();
   const isPublishSlash = m === '/publish' || m.startsWith('/publish ') || m === '/post' || m === '/dang-bai';

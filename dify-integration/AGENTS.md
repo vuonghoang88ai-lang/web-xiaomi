@@ -189,6 +189,14 @@
 - **Bộ Lọc Khử Giới Từ Thừa (Grammar Sanitizer):** Tự động loại bỏ sạch mọi từ nối, giới từ lơ lửng ở đuôi câu (`tại`, `và`, `cho`, `ở`, `-`, `|`), ngay cả khi câu chưa vượt quá trần ký tự tối đa.
 - Chi tiết xem tại: [`knowledge/51_sop64_agent_readiness_geo_and_conversion_copywriting.md`](file:///home/ubuntu/michinhhang/dify-integration/knowledge/51_sop64_agent_readiness_geo_and_conversion_copywriting.md).
 
+## 33. SOP 65: MA TRẬN LẬP LỊCH HỘI THOẠI & PHÊ DUYỆT TỰ ĐỘNG (CONVERSATIONAL SCHEDULING & APPROVAL MATRIX)
+- **Thấu Cảm Ngữ Cảnh Tự Động (Contextual Empathy):** Nhận diện chính xác đối tượng cần lập lịch trong luồng hội thoại: Bài viết hoàn chỉnh (`article_deliverable`) hay Kế hoạch chiến lược On-page (`strategic_plan`), tự động bóc tách tiêu đề, tóm tắt và định dạng CPT tương ứng.
+- **Giải Mã Thời Gian Thuật Toán (Zero Hardcoding Temporal Resolver):** Phân tích thời gian tự nhiên tiếng Việt (*"sáng mai 9h"*, *"14:30 thứ 4 tuần sau"*, *"sau 2 ngày nữa"*, *"chiều nay"*) thành mốc thời gian chuẩn hóa ISO 8601 và nhãn hiển thị thân thiện, không fix cứng mẫu ngày giờ tĩnh.
+- **Thẻ Phê Duyệt Tương Tác Trực Tiếp Trong Chat (`:::schedule-approval-card`):** Hiển thị thẻ giao diện trực quan trong luồng chat với trạng thái `🟡 Chờ Phê Duyệt`, hỗ trợ 4 nút hành động tức thì: `✅ Phê Duyệt Lập Lịch`, `⚡ Xuất Bản Ngay`, `✏️ Đổi Giờ` và `❌ Hủy Lịch`.
+- **Bảo Chứng Xuất Bản Tự Động Chuẩn WordPress Native:** Đồng bộ với Omni Bridge Connector đẩy sang WordPress dưới dạng `post_status = 'future'` kèm `post_date` và `post_date_gmt` chuẩn múi giờ địa phương, kích hoạt cơ chế `publish_future_post` của WP Cron tự động đăng bài đúng giờ.
+- Chi tiết xem tại: [`knowledge/52_sop65_conversational_scheduling_and_approval_matrix.md`](file:///home/ubuntu/michinhhang/dify-integration/knowledge/52_sop65_conversational_scheduling_and_approval_matrix.md).
+
+
 
 
 

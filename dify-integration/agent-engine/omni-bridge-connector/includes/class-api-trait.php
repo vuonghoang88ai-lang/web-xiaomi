@@ -95,7 +95,7 @@ trait ApiTrait {
             $post_content = preg_replace('/<table>\s*<thead>\s*<tr>\s*<th>(?:Thông số|Đặc tính|Tiêu chí)<\/th>.*?<\/table>/is', '', $post_content);
         }
         $post_excerpt = !empty($params['post_excerpt']) ? sanitize_textarea_field($params['post_excerpt']) : '';
-        $post_status = (!empty($params['status']) && in_array($params['status'], array('publish', 'draft', 'pending'))) ? sanitize_key($params['status']) : 'draft';
+        $post_status = (!empty($params['status']) && in_array($params['status'], array('publish', 'draft', 'pending', 'future'))) ? sanitize_key($params['status']) : 'draft';
         $post_name = !empty($params['post_slug']) ? sanitize_title($params['post_slug']) : sanitize_title($title);
 
         $post_data = array(
@@ -106,6 +106,19 @@ trait ApiTrait {
             'post_type'    => $post_type,
             'post_name'    => $post_name
         );
+
+        // Hỗ trợ Lập lịch đăng bài tự động chuẩn WordPress Native (Scheduled Future Post)
+        $raw_sched = !empty($params['scheduled_at']) ? $params['scheduled_at'] : (!empty($params['post_date']) ? $params['post_date'] : null);
+        if ($raw_sched) {
+            $schedule_ts = strtotime($raw_sched);
+            if ($schedule_ts && $schedule_ts > time()) {
+                $post_data['post_status'] = 'future';
+                $gmt_offset = floatval(get_option('gmt_offset', 7));
+                $post_data['post_date'] = gmdate('Y-m-d H:i:s', $schedule_ts + (int)($gmt_offset * 3600));
+                $post_data['post_date_gmt'] = gmdate('Y-m-d H:i:s', $schedule_ts);
+                $post_data['edit_date'] = true;
+            }
+        }
 
         if (!empty($params['post_id'])) {
             $post_data['ID'] = intval($params['post_id']);
@@ -198,74 +211,7 @@ trait ApiTrait {
             if (!empty($product_data['sku'])) {
                 update_post_meta($post_id, '_sku', sanitize_text_field($product_data['sku']));
             }
-            $stock = !empty($product_data['stock_status']) ? sanitize_text_field($product_data['stock_status']) : 'instock';
-            update_post_meta($post_id, '_stock_status', $stock);
-            wp_set_object_terms($post_id, 'simple', 'product_type');
-
-            // Hỗ trợ đồng bộ ACF Repeater 'technical_specs' (Thông số kỹ thuật sản phẩm)
-            if (!empty($product_data['technical_specs']) && is_array($product_data['technical_specs'])) {
-                $clean_specs = array();
-                foreach ($product_data['technical_specs'] as $spec) {
-                    if (!empty($spec['spec_label'])) {
-                        $clean_specs[] = array(
-                            'spec_label' => sanitize_text_field($spec['spec_label']),
-                            'spec_value' => sanitize_text_field($spec['spec_value'] ?? '')
-                        );
-                    }
-                }
-                if (!empty($clean_specs)) {
-                    // 1. Luôn lưu mảng trực tiếp vào postmeta để template render tức thì không phụ thuộc ACF field key
-                    update_post_meta($post_id, 'technical_specs', $clean_specs);
-                    // 2. Đồng thời lưu cấu trúc từng subfield chuẩn ACF Repeater
-                    foreach ($clean_specs as $idx => $spec) {
-                        update_post_meta($post_id, "technical_specs_{$idx}_spec_label", $spec['spec_label']);
-                        update_post_meta($post_id, "technical_specs_{$idx}_spec_value", $spec['spec_value']);
-                    }
-                    // 3. Nếu có ACF active, kích hoạt thêm update_field để cập nhật cache nội bộ của ACF
-                    if (function_exists('update_field')) {
-                        update_field('technical_specs', $clean_specs, $post_id);
-                    }
-                    // 4. Đồng bộ thuộc tính chuẩn Core WooCommerce (_product_attributes)
-                    // Giúp 100% Theme WooCommerce (Flatsome, WoodMart, Astra, Storefront, OceanWP...)
-                    // tự động nhận diện và hiển thị thông số trong tab "Thông tin bổ sung" (Additional Information)
-                    $wc_attributes = array();
-                    foreach ($clean_specs as $idx => $spec) {
-                        $attr_slug = sanitize_title($spec['spec_label']);
-                        $wc_attributes[$attr_slug] = array(
-                            'name'         => $spec['spec_label'],
-                            'value'        => $spec['spec_value'],
-                            'position'     => $idx,
-                            'is_visible'   => 1,
-                            'is_variation' => 0,
-                            'is_taxonomy'  => 0,
-                        );
-                    }
-                    update_post_meta($post_id, '_product_attributes', $wc_attributes);
-                }
-            }
-
-            // Hỗ trợ đồng bộ thư viện ảnh Gallery sản phẩm qua IDs
-            if (!empty($product_data['gallery_image_ids']) && is_array($product_data['gallery_image_ids'])) {
-                update_post_meta($post_id, '_product_image_gallery', implode(',', array_map('intval', $product_data['gallery_image_ids'])));
-            }
-
-            // Hỗ trợ đồng bộ thư viện ảnh Gallery sản phẩm qua danh sách URLs
-            if (!empty($product_data['gallery_image_urls']) && is_array($product_data['gallery_image_urls'])) {
-                $g_ids = !empty($product_data['gallery_image_ids']) && is_array($product_data['gallery_image_ids']) ? $product_data['gallery_image_ids'] : array();
-                foreach ($product_data['gallery_image_urls'] as $g_url) {
-                    $g_id = $this->sideload_image_to_post($g_url, $post_id, $title);
-                    if ($g_id && !is_wp_error($g_id)) {
-                        $g_ids[] = $g_id;
-                    }
-                }
-                if (!empty($g_ids)) {
-                    update_post_meta($post_id, '_product_image_gallery', implode(',', array_unique(array_map('intval', $g_ids))));
-                }
-            }
-
-            if (function_exists('wc_delete_product_transients')) {
-                wc_delete_product_transients($post_id);
-            }
+            $this->sync_woocommerce_product_meta($post_id, $product_data, $title);
         }
 
         // 6. Custom Meta

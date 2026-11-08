@@ -70,6 +70,11 @@ function generateNextActionChips(messageText) {
       type: 'success'
     });
     chips.push({
+      label: '📅 Lập Lịch & Phê Duyệt',
+      action: 'schedule',
+      type: 'warning'
+    });
+    chips.push({
       label: '🎬 Tạo 3 kịch bản video TikTok Review',
       prompt: 'Dựa trên bài viết trên, hãy viết 3 kịch bản video ngắn TikTok/Reels 60 giây thu hút khách mua hàng kèm hook mở đầu.',
       type: 'secondary'
@@ -206,6 +211,10 @@ function renderNextActionChipsContainer(messageEl, messageText) {
         if (typeof publishCanvasToWordPress === 'function') {
           openArtifactCanvas(messageText);
           publishCanvasToWordPress();
+        }
+      } else if (chip.action === 'schedule') {
+        if (typeof handleChatScheduleCommand === 'function') {
+          handleChatScheduleCommand('/schedule');
         }
       } else if (chip.action === 'autofix_onpage') {
         const h1Match = messageText.match(/H1_SUGGESTED[:\s*]+["“]?([^"”\n]+)["”]?/i) ||

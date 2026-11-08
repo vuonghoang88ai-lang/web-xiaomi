@@ -155,5 +155,62 @@ trait HelpersTrait {
         <?php
         return ob_get_clean();
     }
+
+    /**
+     * Đồng bộ thuộc tính sản phẩm WooCommerce & thông số kỹ thuật (ACF & Core)
+     */
+    public function sync_woocommerce_product_meta($post_id, $product_data, $title = '') {
+        $stock = !empty($product_data['stock_status']) ? sanitize_text_field($product_data['stock_status']) : 'instock';
+        update_post_meta($post_id, '_stock_status', $stock);
+        wp_set_object_terms($post_id, 'simple', 'product_type');
+
+        if (!empty($product_data['technical_specs']) && is_array($product_data['technical_specs'])) {
+            $clean_specs = array();
+            foreach ($product_data['technical_specs'] as $spec) {
+                if (!empty($spec['spec_label'])) {
+                    $clean_specs[] = array(
+                        'spec_label' => sanitize_text_field($spec['spec_label']),
+                        'spec_value' => sanitize_text_field($spec['spec_value'] ?? '')
+                    );
+                }
+            }
+            if (!empty($clean_specs)) {
+                update_post_meta($post_id, 'technical_specs', $clean_specs);
+                foreach ($clean_specs as $idx => $spec) {
+                    update_post_meta($post_id, "technical_specs_{$idx}_spec_label", $spec['spec_label']);
+                    update_post_meta($post_id, "technical_specs_{$idx}_spec_value", $spec['spec_value']);
+                }
+                if (function_exists('update_field')) {
+                    update_field('technical_specs', $clean_specs, $post_id);
+                }
+                $wc_attributes = array();
+                foreach ($clean_specs as $idx => $spec) {
+                    $attr_slug = sanitize_title($spec['spec_label']);
+                    $wc_attributes[$attr_slug] = array(
+                        'name' => $spec['spec_label'], 'value' => $spec['spec_value'],
+                        'position' => $idx, 'is_visible' => 1, 'is_variation' => 0, 'is_taxonomy' => 0,
+                    );
+                }
+                update_post_meta($post_id, '_product_attributes', $wc_attributes);
+            }
+        }
+
+        if (!empty($product_data['gallery_image_ids']) && is_array($product_data['gallery_image_ids'])) {
+            update_post_meta($post_id, '_product_image_gallery', implode(',', array_map('intval', $product_data['gallery_image_ids'])));
+        }
+        if (!empty($product_data['gallery_image_urls']) && is_array($product_data['gallery_image_urls'])) {
+            $g_ids = !empty($product_data['gallery_image_ids']) && is_array($product_data['gallery_image_ids']) ? $product_data['gallery_image_ids'] : array();
+            foreach ($product_data['gallery_image_urls'] as $g_url) {
+                $g_id = $this->sideload_image_to_post($g_url, $post_id, $title);
+                if ($g_id && !is_wp_error($g_id)) $g_ids[] = $g_id;
+            }
+            if (!empty($g_ids)) {
+                update_post_meta($post_id, '_product_image_gallery', implode(',', array_unique(array_map('intval', $g_ids))));
+            }
+        }
+        if (function_exists('wc_delete_product_transients')) {
+            wc_delete_product_transients($post_id);
+        }
+    }
 }
 

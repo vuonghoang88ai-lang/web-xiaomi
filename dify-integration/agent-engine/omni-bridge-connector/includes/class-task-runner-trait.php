@@ -130,16 +130,32 @@ trait Omni_Bridge_Task_Runner_Trait {
         $content = wp_kses_post($data['content'] ?? '');
         $slug    = sanitize_title($data['slug'] ?? $title);
         $status  = sanitize_text_field($data['status'] ?? 'publish');
+        $post_type = sanitize_key($data['post_type'] ?? 'post');
 
-        // Tạo hoặc cập nhật bài viết bằng WordPress PHP nội bộ (100% không bị Cloudflare chặn)
-        $post_id = wp_insert_post([
+        $post_arr = [
             'post_title'   => $title,
             'post_content' => $content,
             'post_name'    => $slug,
             'post_status'  => $status,
-            'post_type'    => 'post',
+            'post_type'    => $post_type,
             'post_author'  => 1
-        ]);
+        ];
+
+        // Hỗ trợ Lập lịch đăng bài tự động chuẩn WordPress Native (Scheduled Future Post)
+        $raw_sched = !empty($data['scheduled_at']) ? $data['scheduled_at'] : (!empty($data['post_date']) ? $data['post_date'] : null);
+        if ($raw_sched) {
+            $schedule_ts = strtotime($raw_sched);
+            if ($schedule_ts && $schedule_ts > time()) {
+                $post_arr['post_status'] = 'future';
+                $gmt_offset = floatval(get_option('gmt_offset', 7));
+                $post_arr['post_date'] = gmdate('Y-m-d H:i:s', $schedule_ts + (int)($gmt_offset * 3600));
+                $post_arr['post_date_gmt'] = gmdate('Y-m-d H:i:s', $schedule_ts);
+                $post_arr['edit_date'] = true;
+            }
+        }
+
+        // Tạo hoặc cập nhật bài viết bằng WordPress PHP nội bộ (100% không bị Cloudflare chặn)
+        $post_id = wp_insert_post($post_arr);
 
         if (is_wp_error($post_id)) {
             throw new Exception($post_id->get_error_message());

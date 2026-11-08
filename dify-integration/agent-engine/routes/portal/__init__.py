@@ -20,6 +20,7 @@ from .covers import router as covers_router
 from .plugin_interop import router as plugin_interop_router
 from .chat_upload import router as chat_upload_router
 from .onpage_ai import router as onpage_ai_router
+from .chat_scheduler import router as chat_scheduler_router
 
 all_routers = [
     projects_router,
@@ -43,6 +44,7 @@ all_routers = [
     covers_router,
     plugin_interop_router,
     onpage_ai_router,
+    chat_scheduler_router,
 ]
 
 

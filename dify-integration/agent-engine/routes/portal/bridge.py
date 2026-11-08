@@ -38,6 +38,7 @@ class PublishHybridRequest(BaseModel):
     featured_image_url: Optional[str] = None
     post_type: Optional[str] = "post"
     status: Optional[str] = "draft"
+    scheduled_at: Optional[str] = None
 
 @router.post("/api/v1/bridge/tasks/poll")
 def poll_tasks_api(req: PollTasksRequest):
