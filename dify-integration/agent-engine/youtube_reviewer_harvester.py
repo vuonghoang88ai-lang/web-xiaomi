@@ -147,3 +147,4 @@ def build_youtube_grounding_block(harvested_videos: List[Dict[str, Any]]) -> str
     ])
 
     return "\n".join(lines)
+
