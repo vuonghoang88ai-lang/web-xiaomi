@@ -229,6 +229,19 @@ def enrich_query_with_live_grounding(query: str, project_id: str) -> str:
         except Exception as ce:
             logger.warning(f"[COMPETITOR_HARVEST_FAIL] {ce}")
 
+        # 4c. SOP 63: Trinh sát Video YouTube Review Tiếp Địa Trải Nghiệm Thực Tế Người Thật
+        try:
+            from youtube_reviewer_harvester import harvest_youtube_reviewer_insights, build_youtube_grounding_block
+            yt_videos = harvest_youtube_reviewer_insights(topic_query, max_videos=1, timeout=4)
+            if yt_videos:
+                yt_block = build_youtube_grounding_block(yt_videos)
+                injections.append(yt_block)
+                for yv in yt_videos:
+                    sources_meta.append(f"- `[YouTube]` Video Review: {yv['title']} ({yv['channel']})")
+                logger.info(f"[YOUTUBE_HARVEST] Injected video transcript for topic: {topic_query[:40]}")
+        except Exception as ye:
+            logger.warning(f"[YOUTUBE_HARVEST_FAIL] {ye}")
+
     # 5. Minh bạch Trích dẫn Gemini Grounding (SOP 42)
     if sources_meta:
         sources_list = "\n".join(sources_meta)

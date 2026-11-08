@@ -100,3 +100,12 @@ Khi CMO AI Copilot sản xuất bài viết chuyên sâu:
 1. **Bắt buộc đọc bài đối thủ:** Thu thập 3 bài viết top đầu SERP cho từ khóa mục tiêu, bóc tách cấu trúc đề mục (Outline), bảng so sánh, thông số kỹ thuật thực tế và chính sách bảo hành đối thủ đang chào mời.
 2. **Khử trùng phong văn AI (Zero-AI Stylometry):** Cấm tiệt các từ ngữ sáo rỗng (*"khám phá ngay", "giải pháp hoàn hảo", "tự hào là", "hàng đầu", "toàn diện"*).
 3. **Hướng người tiêu dùng (B2C Consumer Focus):** Tập trung vào trải nghiệm sử dụng thực tế của khách hàng, bảng so sánh ưu nhược điểm khách quan, hướng dẫn chọn model phù hợp ngân sách và các lưu ý khi lắp đặt trong gia đình.
+
+---
+
+## 8. TRINH SÁT VIDEO YOUTUBE TECH REVIEW TIẾP ĐỊA TRẢI NGHIỆM THỰC TẾ (YOUTUBE TRANSCRIPT GROUNDING)
+Để xóa bỏ triệt để hiện tượng bài viết của AI mang giọng văn lý thuyết sáo rỗng:
+1. **Trích xuất phụ đề video Reviewer người thật:** Khi nhận diện ý định viết bài đánh giá/review model sản phẩm, Gateway tự động tìm kiếm video review công nghệ hàng đầu trên YouTube (các kênh như *Dương Dê, Phan Linh, Vật Vờ Studio...*) và bóc tách toàn bộ phụ đề tiếng Việt thông qua `youtube-transcript-api`.
+2. **Thuật toán nén phụ đề cốt lõi (SOP 35):** Trích xuất nhận định trực tiếp về chất lượng hiển thị thực tế, độ mượt Google TV, chất âm loa tivi, độ nhạy remote giọng nói, và các điểm trừ khách quan mà bài viết marketing thông thường giấu đi.
+3. **Tiếp địa ngữ cảnh & Minh bạch nguồn:** Tiêm khối `[TRẢI NGHIỆM THỰC TẾ TỪ YOUTUBE TECH REVIEWER (GROUNDING - SOP 63)]` vào prompt của CMO và gắn nhãn nguồn `-[YouTube] Video Review: <Tiêu đề> (<Kênh>)` ở danh mục Grounding Sources.
+

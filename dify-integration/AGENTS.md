@@ -178,6 +178,7 @@
 - **Hòa giải Trạng thái Đơn nhất H1 (Single-Source Reconciliation):** Kích hoạt cờ `OMNI_BRIDGE_H1_RENDERED = true` tại theme WordPress và đọc trực tiếp từ `omni_bridge_homepage_h1` để chặn đứng xung đột inject từ hook chân trang, bảo chứng duy nhất 1 thẻ H1 trên trang chủ.
 - **Khóa Bảo Toàn Đa Trường (Multi-Field Immutability Lock):** Khóa bảo toàn Title, Meta Description, H1 khi người dùng bấm Lưu Lên Web (`title_locked`, `meta_description_locked`, `h1_locked`), cấm mọi tác vụ quét ngầm tự ý ghi đè.
 - **Thuật toán Hiệu trừ Tập hợp Động:** Nút `✨ AI Sáng Tạo Mới` áp dụng $S_{valid} = S_{candidates} \setminus (S_{existing} \cup \{S_{current}\})$, đảm bảo mỗi lần bấm là 1 góc nhìn mới 100%, không lặp lại và phản hồi tức thì $< 1$ ms.
+- **Tiếp Địa Video YouTube Review Thực Tế (YouTube Subtitle Grounding):** Tự động bóc tách phụ đề tiếng Việt từ video đánh giá công nghệ trên YouTube (*Dương Dê, Phan Linh, Tinh Tế...*) để bổ sung cảm nhận người thật (chất âm, độ mượt, góc nhìn, nhược điểm) vào bài viết, triệt tiêu hoàn toàn dấu hiệu AI.
 - Chi tiết xem tại: [`knowledge/50_sop63_consumer_centric_matrix_backward_pruning_and_immutability_lock.md`](file:///home/ubuntu/michinhhang/dify-integration/knowledge/50_sop63_consumer_centric_matrix_backward_pruning_and_immutability_lock.md).
 
 
