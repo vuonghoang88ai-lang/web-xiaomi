@@ -70,10 +70,17 @@ class Omni_Bridge_Connector {
         add_action('template_redirect', array($this, 'start_heading_buffer'), 1);
         add_action('wp_head', array($this, 'render_homepage_seo_head'), 1);
         add_action('wp_footer', array($this, 'render_eeat_footer_trust_links'), 100);
+        // Title & Description Filters tương thích mọi Theme & SEO Plugin (Rank Math, Yoast, AIOSEO, SEOPress)
         add_filter('pre_get_document_title', array($this, 'filter_homepage_title'), 9999);
         add_filter('wp_title', array($this, 'filter_homepage_wp_title'), 9999, 2);
         add_filter('rank_math/frontend/title', array($this, 'filter_homepage_title'), 9999);
         add_filter('wpseo_title', array($this, 'filter_homepage_title'), 9999);
+        add_filter('aioseo_title', array($this, 'filter_homepage_title'), 9999);
+        add_filter('seopress_titles_title', array($this, 'filter_homepage_title'), 9999);
+        add_filter('rank_math/frontend/description', array($this, 'filter_homepage_desc'), 9999);
+        add_filter('wpseo_metadesc', array($this, 'filter_homepage_desc'), 9999);
+        add_filter('aioseo_description', array($this, 'filter_homepage_desc'), 9999);
+        add_filter('seopress_titles_desc', array($this, 'filter_homepage_desc'), 9999);
 
         // Hooks tương thích Theme Phổ quát (Universal Theme Compatibility)
         add_filter('woocommerce_product_tabs', array($this, 'register_universal_specs_tab'), 25);

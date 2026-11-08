@@ -124,6 +124,14 @@ trait SeoTrait {
         return $title;
     }
 
+    public function filter_homepage_desc($desc) {
+        if (is_front_page() || is_home()) {
+            $custom_desc = get_option('omni_bridge_homepage_desc');
+            if (!empty($custom_desc)) return $custom_desc;
+        }
+        return $desc;
+    }
+
     /**
      * SOP 64: Dynamic /llms.txt & /llms-full.txt Endpoint (GEO AI-Agent Readiness)
      */

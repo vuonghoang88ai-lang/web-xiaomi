@@ -48,45 +48,31 @@ trait SiteRepairTrait {
             update_option('omni_bridge_homepage_desc', $homepage_desc);
         }
 
-        // 3. Xử lý trường hợp Trang Chủ là Trang Tĩnh (Static Front Page)
+        // 3. Trang Chủ là Trang Tĩnh (Static Front Page)
         $front_page_id = (int) get_option('page_on_front');
         if (get_option('show_on_front') === 'page' && $front_page_id > 0) {
-            $seo_data = array(
-                'seo_title' => $homepage_title ?: $site_title,
-                'seo_description' => $homepage_desc ?: $tagline,
-                'focus_keyword' => $homepage_keywords,
-                'canonical_url' => home_url('/'),
-            );
-            $this->sync_seo_meta($front_page_id, $seo_data);
+            $this->sync_seo_meta($front_page_id, array('seo_title' => $homepage_title ?: $site_title, 'seo_description' => $homepage_desc ?: $tagline, 'focus_keyword' => $homepage_keywords, 'canonical_url' => home_url('/')));
             $updated_items[] = 'static_front_page_meta_id_' . $front_page_id;
         }
 
-        // 4. Đồng bộ trực tiếp vào Rank Math Options
-        $rm_titles = get_option('rank-math-options-titles', array());
-        if (is_array($rm_titles)) {
-            if (!empty($homepage_title)) $rm_titles['homepage_title'] = $homepage_title;
-            if (!empty($homepage_desc)) $rm_titles['homepage_description'] = $homepage_desc;
-            update_option('rank-math-options-titles', $rm_titles);
+        // 4. Đồng bộ Rank Math & Yoast SEO Options
+        $rm = get_option('rank-math-options-titles', array());
+        if (is_array($rm)) {
+            if (!empty($homepage_title)) $rm['homepage_title'] = $homepage_title;
+            if (!empty($homepage_desc)) $rm['homepage_description'] = $homepage_desc;
+            update_option('rank-math-options-titles', $rm);
             $updated_items[] = 'rank_math_homepage_options';
         }
-
-        // 5. Đồng bộ trực tiếp vào Yoast SEO Options
-        $wpseo_titles = get_option('wpseo_titles', array());
-        if (is_array($wpseo_titles)) {
-            if (!empty($homepage_title)) $wpseo_titles['title-home-wpseo'] = $homepage_title;
-            if (!empty($homepage_desc)) $wpseo_titles['metadesc-home-wpseo'] = $homepage_desc;
-            update_option('wpseo_titles', $wpseo_titles);
+        $yoast = get_option('wpseo_titles', array());
+        if (is_array($yoast)) {
+            if (!empty($homepage_title)) $yoast['title-home-wpseo'] = $homepage_title;
+            if (!empty($homepage_desc)) $yoast['metadesc-home-wpseo'] = $homepage_desc;
+            update_option('wpseo_titles', $yoast);
             $updated_items[] = 'yoast_homepage_options';
         }
 
-        // 6. Xóa cache LiteSpeed / Object cache để khách truy cập nhận ngay SEO mới
-        if (function_exists('litespeed_purge_all')) {
-            litespeed_purge_all();
-        }
-        if (has_action('litespeed_purge_all')) {
-            do_action('litespeed_purge_all');
-        }
-        wp_cache_flush();
+        // 6. Xóa cache đa tầng (LiteSpeed, WP Rocket, W3TC, WP Super Cache, Autoptimize, Redis)
+        $this->purge_all_environment_caches();
 
         return rest_ensure_response(array(
             'status' => 'success',
@@ -98,6 +84,16 @@ trait SiteRepairTrait {
             'homepage_h1' => get_option('omni_bridge_homepage_h1'),
             'updated_items' => $updated_items
         ));
+    }
+
+    public function purge_all_environment_caches() {
+        if (function_exists('litespeed_purge_all')) litespeed_purge_all();
+        if (has_action('litespeed_purge_all')) do_action('litespeed_purge_all');
+        if (function_exists('rocket_clean_domain')) rocket_clean_domain();
+        if (function_exists('w3tc_flush_all')) w3tc_flush_all();
+        if (function_exists('wp_cache_clear_cache')) wp_cache_clear_cache();
+        if (class_exists('autoptimizeCache') && method_exists('autoptimizeCache', 'clearall')) autoptimizeCache::clearall();
+        wp_cache_flush();
     }
 
     /**
@@ -153,16 +149,8 @@ trait SiteRepairTrait {
         $desc = get_option('omni_bridge_homepage_desc') ?: get_bloginfo('description');
 
         $schema = array(
-            '@context' => 'https://schema.org',
-            '@type' => 'Organization',
-            'name' => $site_name,
-            'url' => $site_url,
-            'description' => $desc,
-            'potentialAction' => array(
-                '@type' => 'SearchAction',
-                'target' => $site_url . '?s={search_term_string}',
-                'query-input' => 'required name=search_term_string'
-            )
+            '@context' => 'https://schema.org', '@type' => 'Organization', 'name' => $site_name, 'url' => $site_url, 'description' => $desc,
+            'potentialAction' => array('@type' => 'SearchAction', 'target' => $site_url . '?s={search_term_string}', 'query-input' => 'required name=search_term_string')
         );
         echo "\n<!-- Omni Bridge E-E-A-T Schema -->\n";
         echo '<script type="application/ld+json">' . json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "</script>\n";
@@ -174,35 +162,49 @@ trait SiteRepairTrait {
     }
 
     /**
-     * SOP 56 & 64: Bộ hòa giải Heading DOM duy nhất 1 thẻ H1 (DOM Heading Harmonizer)
+     * SOP 56 & 64: Bộ hòa giải Heading DOM Phổ Quát (Universal DOM Heading Harmonizer)
+     * Tương thích 100% với mọi Theme (Astra, Flatsome, WoodMart, GeneratePress, FSE) và Page Builder (Elementor, Divi).
      */
     public function start_heading_buffer() {
-        if (!is_admin() && (is_front_page() || is_home())) {
-            ob_start(array($this, 'harmonize_html_headings'));
-        }
+        if (is_admin() || is_feed() || (defined('REST_REQUEST') && REST_REQUEST) || (defined('DOING_AJAX') && DOING_AJAX)) return;
+        if (function_exists('wp_is_json_request') && wp_is_json_request()) return;
+        if (is_front_page() || is_home()) ob_start(array($this, 'harmonize_html_headings'));
     }
 
     public function harmonize_html_headings($html) {
-        if (empty($html) || strpos($html, '<body') === false) return $html;
-        preg_match_all('/<h1(\s+[^>]*)?>(.*?)<\/h1>/is', $html, $matches);
-        $count = count($matches[0]);
-        $h1_val = get_option('omni_bridge_homepage_h1', '');
-        if ($count === 0 && !empty($h1_val)) {
-            $tag = '<div class="omni-bridge-h1-container" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;"><h1 class="omni-seo-h1">' . esc_html($h1_val) . '</h1></div>';
-            return preg_replace('/(<body[^>]*>)/i', '$1' . "\n" . $tag, $html, 1);
-        } elseif ($count > 1) {
-            $idx = 0;
-            return preg_replace_callback('/<h1(\s+[^>]*)?>(.*?)<\/h1>/is', function($m) use (&$idx) {
-                $idx++;
-                return ($idx === 1) ? $m[0] : ('<h2' . ($m[1] ?: '') . '>' . $m[2] . '</h2>');
-            }, $html);
+        if (empty($html) || !is_string($html) || strpos($html, '<body') === false) return $html;
+        $placeholders = array();
+        $safe_html = preg_replace_callback('/<(script|style|template|svg)[^>]*>.*?<\/\1>/is', function($m) use (&$placeholders) {
+            $key = '<!--###OMNI_BLOCK_' . count($placeholders) . '###-->';
+            $placeholders[$key] = $m[0];
+            return $key;
+        }, $html);
+
+        preg_match_all('/<h1(\s+[^>]*)?>(.*?)<\/h1>/is', $safe_html, $matches, PREG_SET_ORDER);
+        $valid_matches = array();
+        foreach ($matches as $m) {
+            $txt = trim(str_replace(array('&nbsp;', '&#160;', "\xc2\xa0"), '', strip_tags($m[2])));
+            if (!empty($txt)) $valid_matches[] = $m;
         }
-        return $html;
+
+        $h1_val = get_option('omni_bridge_homepage_h1', '');
+        if (empty($valid_matches)) {
+            $h1_txt = !empty($h1_val) ? $h1_val : (get_bloginfo('description') ?: get_bloginfo('name'));
+            $tag = '<div class="omni-bridge-h1-container" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;"><h1 class="omni-seo-h1">' . esc_html($h1_txt) . '</h1></div>';
+            $safe_html = preg_replace('/(<body[^>]*>)/i', '$1' . "\n" . $tag, $safe_html, 1);
+        } elseif (count($valid_matches) > 1) {
+            $idx = 0;
+            $safe_html = preg_replace_callback('/<h1(\s+[^>]*)?>(.*?)<\/h1>/is', function($m) use (&$idx) {
+                $txt = trim(str_replace(array('&nbsp;', '&#160;', "\xc2\xa0"), '', strip_tags($m[2])));
+                if (empty($txt)) return '<span style="display:none;"></span>';
+                $idx++;
+                return ($idx === 1) ? $m[0] : ('<h2' . (isset($m[1]) ? $m[1] : '') . '>' . $m[2] . '</h2>');
+            }, $safe_html);
+        }
+        return !empty($placeholders) ? strtr($safe_html, $placeholders) : $safe_html;
     }
 
-    public function render_homepage_semantic_h1() {
-        // Obsoleted by harmonize_html_headings output buffer to prevent duplicate H1 tags
-    }
+    public function render_homepage_semantic_h1() {}
 
     /**
      * Quét danh sách bài viết / truyện thiếu ảnh đại diện (Missing Featured Images)

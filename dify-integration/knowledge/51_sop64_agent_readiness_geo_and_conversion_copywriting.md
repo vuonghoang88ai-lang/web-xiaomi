@@ -33,3 +33,4 @@ Mọi câu văn xuất bản bởi AI Copilot hoặc gợi ý On-page (Title, Me
    - Nếu Theme hoặc Template có $> 1$ thẻ `<h1>`: Tự động giữ nguyên H1 đầu tiên và hạ bậc (downgrade) các thẻ H1 thừa thành `<h2>`.
 2. **Khử trùng giới từ cụt lửng (Grammar Sanitizer):**
    - Cắt bỏ triệt để các giới từ hoặc ký tự nối lơ lửng ở cuối câu (`tại`, `và`, `cho`, `ở`, `-`, `|`), ngay cả khi chuỗi chưa chạm ngưỡng trần ký tự.
+
