@@ -167,25 +167,41 @@ trait SiteRepairTrait {
         echo "\n<!-- Omni Bridge E-E-A-T Schema -->\n";
         echo '<script type="application/ld+json">' . json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "</script>\n";
 
+        echo '<link rel="alternate" type="text/markdown" href="' . esc_url(home_url('/llms.txt')) . "\" title=\"LLM Agent Manifest\">\n";
         if ($this->resolve_seo_provider() === 'none' && !empty($desc)) {
             echo '<meta name="description" content="' . esc_attr($desc) . "\">\n";
         }
     }
 
     /**
-     * Chèn thẻ H1 semantic đảm bảo chuẩn On-Page 100/100 mà không làm vỡ giao diện theme
+     * SOP 56 & 64: Bộ hòa giải Heading DOM duy nhất 1 thẻ H1 (DOM Heading Harmonizer)
      */
-    public function render_homepage_semantic_h1() {
-        if (!is_front_page() && !is_home()) return;
-        if (defined('OMNI_BRIDGE_H1_RENDERED') && OMNI_BRIDGE_H1_RENDERED) return;
-
-        $h1 = get_option('omni_bridge_homepage_h1', '');
-        if (!empty($h1)) {
-            echo "\n<!-- Omni Bridge Semantic H1 Tag -->\n";
-            echo '<div class="omni-bridge-h1-container" style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;">';
-            echo '<h1 class="omni-seo-h1">' . esc_html($h1) . '</h1>';
-            echo "</div>\n";
+    public function start_heading_buffer() {
+        if (!is_admin() && (is_front_page() || is_home())) {
+            ob_start(array($this, 'harmonize_html_headings'));
         }
+    }
+
+    public function harmonize_html_headings($html) {
+        if (empty($html) || strpos($html, '<body') === false) return $html;
+        preg_match_all('/<h1(\s+[^>]*)?>(.*?)<\/h1>/is', $html, $matches);
+        $count = count($matches[0]);
+        $h1_val = get_option('omni_bridge_homepage_h1', '');
+        if ($count === 0 && !empty($h1_val)) {
+            $tag = '<div class="omni-bridge-h1-container" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;"><h1 class="omni-seo-h1">' . esc_html($h1_val) . '</h1></div>';
+            return preg_replace('/(<body[^>]*>)/i', '$1' . "\n" . $tag, $html, 1);
+        } elseif ($count > 1) {
+            $idx = 0;
+            return preg_replace_callback('/<h1(\s+[^>]*)?>(.*?)<\/h1>/is', function($m) use (&$idx) {
+                $idx++;
+                return ($idx === 1) ? $m[0] : ('<h2' . ($m[1] ?: '') . '>' . $m[2] . '</h2>');
+            }, $html);
+        }
+        return $html;
+    }
+
+    public function render_homepage_semantic_h1() {
+        // Obsoleted by harmonize_html_headings output buffer to prevent duplicate H1 tags
     }
 
     /**
@@ -214,40 +230,20 @@ trait SiteRepairTrait {
         }
 
         $args = array(
-            'post_type'      => $all_types,
-            'post_status'    => array('publish', 'draft'),
-            'posts_per_page' => $limit,
-            'meta_query'     => array(
-                array(
-                    'key'     => '_thumbnail_id',
-                    'compare' => 'NOT EXISTS'
-                )
-            ),
-            'orderby'        => 'date',
-            'order'          => 'DESC'
+            'post_type' => $all_types, 'post_status' => array('publish', 'draft'), 'posts_per_page' => $limit,
+            'meta_query' => array(array('key' => '_thumbnail_id', 'compare' => 'NOT EXISTS')),
+            'orderby' => 'date', 'order' => 'DESC'
         );
-
         $query = new WP_Query($args);
         $missing = array();
-
         foreach ($query->posts as $p) {
-            $cats = wp_get_post_categories($p->ID, array('fields' => 'names'));
             $missing[] = array(
-                'id'         => $p->ID,
-                'title'      => $p->post_title,
-                'slug'       => $p->post_name,
-                'post_type'  => $p->post_type,
-                'categories' => $cats,
-                'status'     => $p->post_status,
-                'url'        => get_permalink($p->ID)
+                'id' => $p->ID, 'title' => $p->post_title, 'slug' => $p->post_name,
+                'post_type' => $p->post_type, 'categories' => wp_get_post_categories($p->ID, array('fields' => 'names')),
+                'status' => $p->post_status, 'url' => get_permalink($p->ID)
             );
         }
-
-        return rest_ensure_response(array(
-            'status' => 'success',
-            'total_missing' => count($missing),
-            'items'  => $missing
-        ));
+        return rest_ensure_response(array('status' => 'success', 'total_missing' => count($missing), 'items' => $missing));
     }
 
     /**

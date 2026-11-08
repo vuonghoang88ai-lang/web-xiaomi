@@ -65,9 +65,10 @@ class Omni_Bridge_Connector {
         add_action('admin_init', array($this, 'register_settings'));
         add_action('admin_post_omni_bridge_gsc_connect', array($this, 'handle_admin_gsc_connect'));
 
-        // Hooks tự động hóa On-Page & Schema E-E-A-T
+        // Hooks tự động hóa On-Page, Heading Harmonizer (SOP 56) & GEO llms.txt (SOP 64)
+        add_action('init', array($this, 'handle_llms_txt_endpoint'));
+        add_action('template_redirect', array($this, 'start_heading_buffer'), 1);
         add_action('wp_head', array($this, 'render_homepage_seo_head'), 1);
-        add_action('wp_footer', array($this, 'render_homepage_semantic_h1'), 99);
         add_action('wp_footer', array($this, 'render_eeat_footer_trust_links'), 100);
         add_filter('pre_get_document_title', array($this, 'filter_homepage_title'), 9999);
         add_filter('wp_title', array($this, 'filter_homepage_wp_title'), 9999, 2);

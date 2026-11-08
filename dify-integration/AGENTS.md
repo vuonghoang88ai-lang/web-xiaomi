@@ -181,5 +181,13 @@
 - **Tiếp Địa Video YouTube Review Thực Tế (YouTube Subtitle Grounding):** Tự động bóc tách phụ đề tiếng Việt từ video đánh giá công nghệ trên YouTube (*Dương Dê, Phan Linh, Tinh Tế...*) để bổ sung cảm nhận người thật (chất âm, độ mượt, góc nhìn, nhược điểm) vào bài viết, triệt tiêu hoàn toàn dấu hiệu AI.
 - Chi tiết xem tại: [`knowledge/50_sop63_consumer_centric_matrix_backward_pruning_and_immutability_lock.md`](file:///home/ubuntu/michinhhang/dify-integration/knowledge/50_sop63_consumer_centric_matrix_backward_pruning_and_immutability_lock.md).
 
+## 32. SOP 64: BỘ QUY CHUẨN AGENT-READINESS (GEO/AEO) & KỸ THUẬT COPYWRITING CHUYỂN ĐỔI CAO
+- **Dynamic `/llms.txt` & AI-Agent Readiness:** Mọi website liên kết qua Omni Bridge tự động cung cấp endpoint `/llms.txt` và `/llms-full.txt` tại root domain, kèm thẻ `<link rel="alternate" type="text/markdown" href="/llms.txt">` ở `<head>`, chuẩn hóa dữ liệu thực thể thương hiệu, danh mục sản phẩm và bảng giá kho cho các công cụ AI Search (Google AI Overviews, Perplexity, ChatGPT Search, Claude, Gemini).
+- **DOM Heading Harmonizer (Bảo chứng duy nhất 1 thẻ H1):** Kích hoạt Output Buffering (`ob_start`) tại Omni Bridge. Tự động giữ nguyên H1 đầu tiên và hạ bậc các H1 phụ thừa thành `<h2>`, triệt tiêu hoàn toàn lỗi `⚠️ Trùng H1` trên mọi theme WordPress.
+- **The Three-Question Gate & Copywriting Chuyển Đổi:** Mọi tiêu đề và bài viết phải vượt qua 3 bài kiểm tra: (1) *Can the reader picture it?* (Hình ảnh cụ thể, không trừu tượng); (2) *Can it be proven true/false?* (Sự thật kiểm chứng được: bảo hành 24T, đổi mới 30 ngày); (3) *The Swap Test* (Nếu đối thủ cạnh tranh nói được câu tương tự thì phải viết lại theo lợi thế độc quyền).
+- **Bộ Lọc Khử Giới Từ Thừa (Grammar Sanitizer):** Tự động loại bỏ sạch mọi từ nối, giới từ lơ lửng ở đuôi câu (`tại`, `và`, `cho`, `ở`, `-`, `|`), ngay cả khi câu chưa vượt quá trần ký tự tối đa.
+- Chi tiết xem tại: [`knowledge/51_sop64_agent_readiness_geo_and_conversion_copywriting.md`](file:///home/ubuntu/michinhhang/dify-integration/knowledge/51_sop64_agent_readiness_geo_and_conversion_copywriting.md).
+
+
 
 

@@ -57,26 +57,30 @@ function resolveBrandEntity(p, bp, audit) {
   return clean ? (clean.charAt(0).toUpperCase() + clean.slice(1)) : 'Thương Hiệu';
 }
 
-function clampSeoText(s, min, max, pad, isSentence) {
+function stripDanglingTrailingWords(s) {
   s = (s || '').replace(/\s+/g, ' ').trim();
+  while (true) {
+    const prev = s;
+    s = s.replace(/[\s,;:\-|/]+$/, '').replace(/\s+(?:tại|và|cho|của|ở|là|với|khi|trong|được|bởi|nhất|mới|&|đến|từ|về|giá)\s*$/i, '').replace(/[\s,;:\-|/]+$/, '');
+    if (s === prev) break;
+  }
+  return s;
+}
+
+function clampSeoText(s, min, max, pad, isSentence) {
+  s = stripDanglingTrailingWords(s);
   if (s.length > max) {
     s = s.slice(0, max);
     const sp = s.lastIndexOf(' ');
     if (sp >= min - 5) s = s.slice(0, sp);
-    while (true) {
-      let prev = s;
-      s = s.replace(/[\s,;:\-|/]+$/, '');
-      s = s.replace(/\s+(?:tại|và|cho|của|ở|là|với|khi|trong|được|bởi|nhất|mới|&|đến|từ|về|giá)\s*$/i, '');
-      s = s.replace(/[\s,;:\-|/]+$/, '');
-      if (s === prev || s.length < min) break;
-    }
+    s = stripDanglingTrailingWords(s);
     if (isSentence && !/[.!?]$/.test(s)) s += '.';
   }
   if (s.length < min && pad) {
     const candidate = `${s} - ${pad}`.trim();
     if (candidate.length <= max) s = candidate;
   }
-  return s;
+  return stripDanglingTrailingWords(s);
 }
 
 function buildDiverseVariants(brand, cats, loc, archetype, isXiaomi) {

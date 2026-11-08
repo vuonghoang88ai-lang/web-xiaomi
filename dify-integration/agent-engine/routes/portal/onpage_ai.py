@@ -13,6 +13,8 @@ import re
 import json
 import logging
 import random
+import time
+import urllib.request
 from pydantic import BaseModel
 from fastapi import APIRouter
 import db_service
@@ -43,12 +45,24 @@ def _format_brand(brand: str) -> str:
     return b
 
 
+def _strip_dangling_trailing(t: str) -> str:
+    """Khử triệt để giới từ và ký tự lơ lửng ở cuối câu (SOP 57 & SOP 64)."""
+    while True:
+        prev = t
+        t = re.sub(r"[\s,;:\-|/]+$", "", t)
+        t = re.sub(r"\s+(?:tại|và|cho|của|ở|là|với|khi|trong|được|bởi|nhất|mới|&|đến|từ|về|giá)\s*$", "", t, flags=re.IGNORECASE)
+        t = re.sub(r"[\s,;:\-|/]+$", "", t)
+        if t == prev:
+            break
+    return t
+
+
 def _clean_and_clamp_seo(text: str, min_len: int, max_len: int, is_sentence: bool = False) -> str:
     """Khử sạch từ sáo rỗng AI, loại bỏ từ treo lơ lửng và kẹp đúng độ dài chuẩn SEO."""
     t = re.sub(r"\s+", " ", text or "").strip()
     t = re.sub(r"^[\"']|[\"']$", "", t)
     
-    # Khử các cụm từ sáo rỗng AI
+    # Khử các cụm từ sáo rỗng AI (SOP 63 & Marketingskills Copywriting Gate)
     ai_cliches = [
         r"\bhàng đầu\b", r"\btự hào\b", r"\bkhám phá ngay\b", r"\bkhám phá\b",
         r"\bgiải pháp hoàn hảo\b", r"\bđỉnh cao\b", r"\bvượt trội\b",
@@ -56,21 +70,14 @@ def _clean_and_clamp_seo(text: str, min_len: int, max_len: int, is_sentence: boo
     ]
     for pattern in ai_cliches:
         t = re.sub(pattern, "", t, flags=re.IGNORECASE)
-    t = re.sub(r"\s+", " ", t).strip()
+    t = _strip_dangling_trailing(re.sub(r"\s+", " ", t).strip())
 
     if len(t) > max_len:
         t = t[:max_len]
         sp = t.rfind(" ")
         if sp >= min_len - 5:
             t = t[:sp]
-        # Vòng lặp loại bỏ triệt để từ nối bị cắt cụt ở cuối câu
-        while True:
-            prev = t
-            t = re.sub(r"[\s,;:\-|/]+$", "", t)
-            t = re.sub(r"\s+(?:tại|và|cho|của|ở|là|với|khi|trong|được|bởi|nhất|mới|&|đến|từ|về|giá)\s*$", "", t, flags=re.IGNORECASE)
-            t = re.sub(r"[\s,;:\-|/]+$", "", t)
-            if t == prev or len(t) < min_len:
-                break
+        t = _strip_dangling_trailing(t)
         if is_sentence and not re.search(r"[.!?]$", t):
             t += "."
 
@@ -80,7 +87,7 @@ def _clean_and_clamp_seo(text: str, min_len: int, max_len: int, is_sentence: boo
         if len(candidate) <= max_len:
             t = candidate
 
-    return t
+    return _strip_dangling_trailing(t)
 
 
 def _generate_fallback_variant(
@@ -212,6 +219,41 @@ def _generate_fallback_variant(
     return random.choice(other_pool or fallback_pool)
 
 
+def _ask_dify_quick_onpage(field_type: str, brand: str, cats: list, loc: str, archetype: str, timeout: int = 4) -> Optional[str]:
+    """Gọi Dify CMO Copilot trực tiếp để sinh gợi ý On-page độc bản (SOP 64)."""
+    dify_url = os.getenv("DIFY_API_URL", "http://docker-api-1:5001/v1").rstrip("/")
+    dify_key = os.getenv("DIFY_APP_API_KEY", "")
+    if not dify_key:
+        return None
+    c_str = ", ".join(cats[:2]) if cats else "sản phẩm chính hãng"
+    rule = "độ dài 45-60 ký tự" if field_type == "title" else ("độ dài 125-150 ký tự" if field_type == "meta_description" else "độ dài 25-70 ký tự")
+    prompt = (
+        f"Đóng vai trò Chuyên gia SEO & Copywriting. Hãy viết 01 {field_type} trang chủ đạt chuẩn {rule} "
+        f"cho thương hiệu '{brand}' chuyên về {c_str} tại {loc}. "
+        f"Áp dụng nguyên tắc 'Three-Question Gate' (Outcome + Proof - Pain Point), loại bỏ từ sáo rỗng AI ('hàng đầu', 'tự hào'). "
+        f"Chỉ trả về DUY NHẤT 1 dòng text, không kèm ngoặc kép hay giải thích."
+    )
+    req_body = json.dumps({"inputs": {}, "query": prompt, "response_mode": "streaming", "user": f"onpage-{int(time.time())}"}).encode("utf-8")
+    req = urllib.request.Request(f"{dify_url}/chat-messages", data=req_body, headers={"Authorization": f"Bearer {dify_key}", "Content-Type": "application/json"})
+    try:
+        chunks = []
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            for line in resp:
+                l = line.decode("utf-8").strip()
+                if l.startswith("data:"):
+                    try:
+                        ev = json.loads(l[5:].strip())
+                        if ev.get("event") == "message":
+                            chunks.append(ev.get("answer", ""))
+                    except Exception:
+                        pass
+        res = "".join(chunks).strip().strip('"\'')
+        return res if len(res) >= 15 else None
+    except Exception as e:
+        logger.warning(f"[DIFY_ONPAGE_SUGGEST_FAIL] {e}")
+        return None
+
+
 @router.post("/{project_id}/onpage-ai-suggest")
 def portal_generate_onpage_ai_suggest(project_id: str, payload: OnpageAiSuggestRequest):
     """Sinh gợi ý On-page sáng tạo từ AI kết hợp kiểm soát độ dài và khử từ ngữ AI sáo rỗng."""
@@ -220,7 +262,18 @@ def portal_generate_onpage_ai_suggest(project_id: str, payload: OnpageAiSuggestR
     loc = payload.target_location or project.get("target_location") or "Toàn quốc"
     cats = payload.core_categories or []
 
-    # Kích hoạt bộ tổng hợp sáng tạo AI tức thì (Instant Creative AI Synthesizer)
+    # 1. Thử gọi trực tiếp AI Model (Dify Core) sinh gợi ý động thực thụ
+    ai_candidate = _ask_dify_quick_onpage(payload.field_type, brand, cats, loc, payload.archetype or "commerce_retail")
+    min_len = 40 if payload.field_type == "title" else (120 if payload.field_type == "meta_description" else 20)
+    max_len = 65 if payload.field_type == "title" else (155 if payload.field_type == "meta_description" else 80)
+    is_sen = (payload.field_type == "meta_description")
+
+    if ai_candidate:
+        clean_ai = _clean_and_clamp_seo(ai_candidate, min_len, max_len, is_sen)
+        if min_len <= len(clean_ai) <= max_len:
+            return {"status": "success", "suggestion": clean_ai, "field_type": payload.field_type, "length": len(clean_ai), "engine": "dify_ai"}
+
+    # 2. Dự phòng thuật toán sinh động (Algorithmic Synthesizer) không fix cứng
     suggestion = _generate_fallback_variant(
         payload.field_type, brand, cats, loc,
         payload.archetype or "commerce_retail",
@@ -232,5 +285,6 @@ def portal_generate_onpage_ai_suggest(project_id: str, payload: OnpageAiSuggestR
         "status": "success",
         "suggestion": suggestion,
         "field_type": payload.field_type,
-        "length": len(suggestion)
+        "length": len(suggestion),
+        "engine": "algorithmic_synthesizer"
     }

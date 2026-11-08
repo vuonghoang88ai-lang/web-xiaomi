@@ -124,4 +124,33 @@ trait SeoTrait {
         return $title;
     }
 
+    /**
+     * SOP 64: Dynamic /llms.txt & /llms-full.txt Endpoint (GEO AI-Agent Readiness)
+     */
+    public function handle_llms_txt_endpoint() {
+        $uri = isset($_SERVER['REQUEST_URI']) ? parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) : '';
+        if ($uri === '/llms.txt' || $uri === '/llms-full.txt') {
+            header('Content-Type: text/markdown; charset=utf-8');
+            header('X-Robots-Tag: all');
+            $name = get_bloginfo('name');
+            $desc = get_bloginfo('description');
+            $home = home_url('/');
+            echo "# {$name}\n\n";
+            echo "> {$desc}\n\n";
+            echo "## Core Products & Services\n";
+            $terms = get_terms(array('taxonomy' => 'product_cat', 'hide_empty' => true, 'number' => 12));
+            if (!is_wp_error($terms) && !empty($terms)) {
+                foreach ($terms as $t) {
+                    echo "- [{$t->name}](" . get_term_link($t) . "): " . ($t->description ?: "Danh mục {$t->name} chính hãng") . "\n";
+                }
+            }
+            echo "\n## Canonical Knowledge & E-E-A-T\n";
+            echo "- [Giới Thiệu]({$home}gioi-thieu/)\n";
+            echo "- [Điều Khoản Dịch Vụ]({$home}dieu-khoan/)\n";
+            echo "- [Chính Sách Bảo Mật]({$home}chinh-sach-bao-mat/)\n";
+            echo "- [Tra Cứu Bảo Hành]({$home}tra-cuu-bao-hanh/)\n";
+            exit;
+        }
+    }
+
 }
